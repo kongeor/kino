@@ -1,0 +1,8 @@
+{:dev  {:source-paths ["dev"]
+        :env {:http-port 3000
+              :app-host "http://localhost:3000"
+              :spotify-client-id ""
+              :spotify-client-secret ""
+              :history-watcher-interval 30
+              :loggly-api-token ""
+              :db-location "data"}}}
