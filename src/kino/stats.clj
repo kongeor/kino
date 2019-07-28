@@ -19,7 +19,6 @@
                               t (-> p :kino.play/track :kino.track/number)
                               v1 (-> c :kino.play/track :kino.track/album-id)
                               t1 (-> c :kino.play/track :kino.track/number)]
-                          (println "-> " v t v1 t1)
                           (and (= v v1)
                                (= t (inc t1))
                                #_(or (= t (inc t1))
@@ -35,7 +34,7 @@
     ))
 
 (defn album-plays [uid]
-  (let [data (db/get-play-data uid)]
+  (let [data (db/get-play-data uid 2000)]
     (->>
       (split-by-conseq-plays data)
       #_(filter #(> (count %) 1))

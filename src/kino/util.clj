@@ -18,4 +18,4 @@
 (defn project-version []
   (if-let [version (System/getProperty "kino.version")]
     version
-    (manifest-map (Class/forName "kino.core"))))
+    (get (manifest-map (Class/forName "kino.core")) "Leiningen-Project-Version")))

@@ -34,15 +34,17 @@
       [:h1 "Kino"]
       content
       [:div
-       [:p (str "version " (util/project-version))]]]]))
+       [:p (str "version " (util/project-version))]
+       [:p (str "total users: " (count (db/get-users)))]]]]))
 
 (defn index [uid]
   (let [user (and uid (db/get-entity uid))]
     (if user
-      (let [play-data (db/get-play-data uid)]
+      (let [play-data (db/get-play-data uid 20)]
         #_(clojure.pprint/pprint play-data)
         (base
           [:div [:p (str "Welcome " (:display_name user))]
+           [:p [:a {:href "/stats"} "stats"]]
            (for [p play-data]
              [:div.row
               [:div.two.columns
@@ -62,6 +64,7 @@
         #_(clojure.pprint/pprint play-data)
         (base
           [:div [:p (str "Welcome " (:display_name user))]
+           [:p [:a {:href "/"} "home"]]
            (for [a album-data]
              [:div.row
               [:div.two.columns

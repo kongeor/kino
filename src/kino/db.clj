@@ -110,8 +110,8 @@
 
 #_(get-last-play :08uc4dh5sl6f8888eydkq2sbz)
 
-(defn get-play-data [user-id]
-  (->> (get-plays user-id)
+(defn get-play-data [user-id limit]
+  (->> (get-plays user-id :limit limit)
        (map #(assoc % :kino.play/track (get-entity (:kino.play/track-id %))))
        (map #(assoc-in % [:kino.play/track :kino.track/album] (get-entity (-> % :kino.play/track :kino.track/album-id))))
        (map (fn [t] (assoc-in t [:kino.play/track :kino.track/artists] (mapv get-entity (-> t :kino.play/track :kino.track/artist-ids)))))))

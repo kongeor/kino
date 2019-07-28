@@ -24,12 +24,6 @@
             (spot/fetch-and-persist u)
             u))))))
 
-(defn- fmt-latest-tracks [uid]
-  (if uid
-    (->> (db/get-play-data uid)
-         (map #(-> % :track :name))
-         (clojure.string/join "<br>"))))
-
 (defroutes routes
   (GET "/" []
        (fn [{session :session}]
@@ -59,9 +53,6 @@
        (html/index "foo"))
   (GET "/boom" []
        (ex-info "boom!" {}))
-  (GET "/version" []
-       (response/response
-         (manifest-map (Class/forName "kino.core"))))
   (GET "/tracks" []
        (db/get-tracks))
   (GET "/entity/:id" []
