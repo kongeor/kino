@@ -17,11 +17,13 @@
             [clojurewerkz.quartzite.jobs :refer [defjob] :as j])
   )
 
-(timbre/merge-config!
-  {:appenders
-   {:loggly (loggly/loggly-appender
-              {:tags [:kino]
-               :token (env :loggly-api-token)})}})
+(if-let [token (env :loggly-api-token)]
+  (if-not (clojure.string/blank? token)
+    (timbre/merge-config!
+      {:appenders
+       {:loggly (loggly/loggly-appender
+                  {:tags [:kino]
+                   :token token})}})))
 
 ;; crux
 

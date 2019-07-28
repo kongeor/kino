@@ -30,26 +30,15 @@
          (map #(-> % :track :name))
          (clojure.string/join "<br>"))))
 
-(defn manifest-map
-  "Returns the mainAttributes of the manifest of the passed in class as a map."
-  [clazz]
-  (->> (str "jar:"
-            (-> clazz
-              .getProtectionDomain
-              .getCodeSource
-              .getLocation)
-            "!/META-INF/MANIFEST.MF")
-       clojure.java.io/input-stream
-       java.util.jar.Manifest.
-       .getMainAttributes
-       (map (fn [[k v]] [(str k) v]))
-       (into {})))
-
 (defroutes routes
   (GET "/" []
        (fn [{session :session}]
          (let [uid (:spot.user/id session)]
            (html/index uid))))
+  (GET "/stats" []
+       (fn [{session :session}]
+         (let [uid (:spot.user/id session)]
+           (html/stats uid))))
   (GET "/yo" []
        (fn [{session :session}]
          (taoensso.timbre/info "getting yo")
@@ -72,7 +61,7 @@
        (ex-info "boom!" {}))
   (GET "/version" []
        (response/response
-         (manifest-map (Class/forName "ify.core"))))
+         (manifest-map (Class/forName "kino.core"))))
   (GET "/tracks" []
        (db/get-tracks))
   (GET "/entity/:id" []
@@ -83,7 +72,8 @@
              (content-type "application/json")
              (charset "UTF-8")))))
   (GET "/login" []
-       (response/redirect (oauth/authorize-uri "foo")))
+       (fn [{session :session}]
+         (response/redirect (oauth/authorize-uri "foo"))))
   (GET "/oauth/callback" []
        (fn [{params :params session :session}]
          (let [user (handle-oauth-callback params)

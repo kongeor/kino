@@ -119,30 +119,10 @@
 (comment
   (def data (get-play-data :08uc4dh5sl6f8888eydkq2sbz))
 
-  (map #(-> % :kino.play/track :kino.track/album :kino.album/name) data))
+  (map #(-> % :kino.play/track :kino.track/album :kino.album/name) data)
 
-(comment
+  data)
 
-  (defn ->part-split [pred]
-    (let [a (atom nil)]
-      (fn [e]
-        (let [res (pred @a e)]
-          (reset! a e)
-          res))))
-
-  (->>
-    (partition-by
-      (->part-split (fn [p c]
-                      (or (nil? p)
-                          (let [v (-> p :kino.play/track :kino.track/album-id)
-                                v1 (-> c :kino.play/track :kino.track/album-id)]
-                               (= v v1)))))
-      data)
-    (filter #(> (count %) 1))
-    #_(map #(-> % first :kino.play/track :kino.track/album))
-    (map (fn [a]
-           [(-> a first :kino.play/track :kino.track/album)
-            (map #(-> % :kino.play/track :kino.track/number) a)]))))
 
 #_(-> system :db :db)
 

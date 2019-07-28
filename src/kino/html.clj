@@ -1,7 +1,9 @@
 (ns kino.html
   (:require
     (hiccup [page :refer [html5 include-js include-css]])
-    [kino.db :as db]))
+    [kino.util :as util]
+    [kino.db :as db]
+    [kino.stats :as stats]))
 
 
 (defn base [content]
@@ -30,7 +32,9 @@
 
      [:div#main-area.container
       [:h1 "Kino"]
-      content]]))
+      content
+      [:div
+       [:p (str "version " (util/project-version))]]]]))
 
 (defn index [uid]
   (let [user (and uid (db/get-entity uid))]
@@ -49,4 +53,22 @@
                                    (map :kino.artist/name)
                                    (clojure.string/join ", ")))]
                [:p (-> p :kino.play/played-at)]]])]))
+      (base [:a.button.button-primary {:href "/login"} "Login"]))))
+
+(defn stats [uid]
+  (let [user (and uid (db/get-entity uid))]
+    (if user
+      (let [album-data (stats/album-plays uid)]
+        #_(clojure.pprint/pprint play-data)
+        (base
+          [:div [:p (str "Welcome " (:display_name user))]
+           (for [a album-data]
+             [:div.row
+              [:div.two.columns
+               [:img.u-max-full-width {:src (get-in a [:album :kino.album/images 1 :url])}]]
+              [:div.ten.columns
+               [:h5 (-> a :album :kino.album/name)]
+               [:p (str "tracks " (->> (-> a :tracks )
+                                   (clojure.string/join ", ")))]
+               [:p (-> a :played-at)]]])]))
       (base [:a.button.button-primary {:href "/login"} "Login"]))))
