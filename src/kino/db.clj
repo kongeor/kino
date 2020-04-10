@@ -142,3 +142,19 @@
             user-data]])
         user-data))))
 
+
+(comment
+  (let [sys (-> system :db :db)]
+    (crux/tx-log (crux/db sys))))
+
+(comment
+  (let [sys (-> system :db :db)]
+    #_(spit "daten.edn" (prn-str (crux/tx-log sys (crux/new-tx-log-context sys) nil true)))
+    (clojure.edn/read-string (slurp "daten.edn"))
+
+    #_(crux.api/history sys :asdf)
+    #_(crux/db sys)))
+
+(comment
+  (let [sys (-> system :db :db)]
+    (crux/history sys)))
