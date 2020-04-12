@@ -135,7 +135,7 @@
         existing (get-entity id)]
     (if existing
       existing
-      #_(do
+      (do
         (crux/submit-tx
           (-> system :db :db)
           [[:crux.tx/put
