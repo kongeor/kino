@@ -135,7 +135,7 @@
         existing (get-entity id)]
     (if existing
       existing
-      (do
+      #_(do
         (crux/submit-tx
           (-> system :db :db)
           [[:crux.tx/put
@@ -149,8 +149,62 @@
 
 (comment
   (let [sys (-> system :db :db)]
-    #_(spit "daten.edn" (prn-str (crux/tx-log sys (crux/new-tx-log-context sys) nil true)))
-    (clojure.edn/read-string (slurp "daten.edn"))
+    #_(spit "data.edn" (prn-str ))
+
+    #_(let [data (crux/tx-log sys (crux/new-tx-log-context sys) nil true)]
+      (clojure.pprint/pprint data (clojure.java.io/writer "data.edn")))
+
+    #_(crux/attribute-stats sys)
+
+    (count
+      (entity-data (-> system :db :db)
+        (crux/q (crux/db (-> system :db :db))
+          '{:find [e]
+            :where [[e :kino.album/name ?]]})))
+
+    #_(entity-data (-> system :db :db)
+      (crux/q (crux/db (-> system :db :db))
+        '{:find [e]
+          :where [[e :kino.artist/name ?]]}))
+
+    #_(crux/history-range sys :kino.track/name
+      #inst "2015-05-18T09:20:27.966"
+      #inst "2015-05-18T09:20:27.966"
+      #inst "2020-05-18T09:20:27.966"
+      #inst "2020-05-18T09:20:27.966")
+
+    #_(count
+      (crux/q
+        (crux/db (-> system :db :db))
+        '{:find [e]
+          :where [[e :kino.artist/name ?]]}))
+
+    #_(->>
+      (crux/q (crux/db (-> system :db :db))
+        '{:find [e]
+          :where [[e :kino.artist/name ?]]})
+      (map first)
+      (map #(crux/history sys %)))
+
+
+    #_(crux/history sys :07L6XZ7QaTsZLP8jwLoFgY)
+
+    #_(crux/submit-tx sys)
+
+    #_(doall
+      (for [tx (clojure.edn/read-string (slurp "data.edn"))]
+        (let [tx' (:crux.api/tx-ops tx)
+              tx'' (mapv (fn [[tx _ data]] [tx data]) tx')]
+          (when (seq tx'')
+            tx''
+            (crux/submit-tx sys tx'')))))
+
+    #_(first (clojure.edn/read-string (slurp "daten.edn")))
+
+    #_(crux/submit-tx sys (first (clojure.edn/read-string (slurp "daten.edn"))))
+
+    #_(crux/tx-log sys (crux/new-tx-log-context sys) nil true)
+
 
     #_(crux.api/history sys :asdf)
     #_(crux/db sys)))
