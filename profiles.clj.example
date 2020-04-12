@@ -6,4 +6,8 @@
               :spotify-client-secret ""
               :history-watcher-interval 30
               :loggly-api-token ""
-              :db-location "data"}}}
+              :pg-db "kino"
+              :pg-host "localhost"
+              :pg-user "kino"
+              :pg-pass "kino"
+              }}}
