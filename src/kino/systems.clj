@@ -35,7 +35,9 @@
           #_(crux/start-node {:crux.node/topology '[crux.standalone/topology
                                                   crux.kv.rocksdb/kv-store]
                             :crux.kv/db-dir "data"})
-          (crux/start-node {:crux.node/topology 'crux.jdbc/topology
+          (crux/start-node {:crux.node/topology '[crux.jdbc/topology
+                                                  crux.kv.rocksdb/kv-store]
+                            :crux.kv/db-dir "data"
                                :crux.jdbc/dbtype "postgresql"
                                :crux.jdbc/dbname (env :pg-db)
                                :crux.jdbc/host (env :pg-host)

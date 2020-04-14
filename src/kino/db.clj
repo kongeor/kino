@@ -174,7 +174,7 @@
       #inst "2020-05-18T09:20:27.966"
       #inst "2020-05-18T09:20:27.966")
 
-    (count
+    #_(count
       (crux/q
         (crux/db (-> system :db :db))
         '{:find [e]
@@ -192,13 +192,13 @@
 
     #_(crux/submit-tx sys)
 
-    #_(doall
+    (doall
       (for [tx (clojure.edn/read-string (slurp "data.edn"))]
         (let [tx' (:crux.api/tx-ops tx)
               tx'' (mapv (fn [[tx _ data]] [tx data]) tx')]
-          (when (seq tx')
-            tx'
-            (crux/submit-tx sys tx')))))
+          (when (seq tx'')
+            tx''
+            (crux/submit-tx sys tx'')))))
 
     #_(first (clojure.edn/read-string (slurp "daten.edn")))
 
