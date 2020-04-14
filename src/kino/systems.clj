@@ -11,6 +11,7 @@
             [taoensso.timbre :as timbre]
             [system.repl :refer [system]]
             [crux.api :as crux]
+            [crux.jdbc]
             [clojurewerkz.quartzite.scheduler :as qs]
             [clojurewerkz.quartzite.triggers :as t]
             [clojurewerkz.quartzite.schedule.simple :refer [schedule repeat-forever with-interval-in-minutes]]
@@ -30,9 +31,18 @@
 (defrecord CruxDb [db]
   component/Lifecycle
   (start [component]
-    (let [db (crux/start-standalone-system {:kv-backend "crux.kv.rocksdb.RocksKv"
-                                            :db-dir (str (env :db-location) "/db-dir-1")
-                                            :event-log-dir (str (env :db-location) "/eventlog-1")})]
+    (let [db
+          #_(crux/start-node {:crux.node/topology '[crux.standalone/topology
+                                                  crux.kv.rocksdb/kv-store]
+                            :crux.kv/db-dir "data"})
+          (crux/start-node {:crux.node/topology '[crux.jdbc/topology
+                                                  crux.kv.rocksdb/kv-store]
+                            :crux.kv/db-dir "data"
+                               :crux.jdbc/dbtype "postgresql"
+                               :crux.jdbc/dbname (env :pg-db)
+                               :crux.jdbc/host (env :pg-host)
+                               :crux.jdbc/user (env :pg-user)
+                               :crux.jdbc/password (env :pg-pass)})]
       (timbre/info "starting crux")
       (assoc component :db db)))
   (stop [component]

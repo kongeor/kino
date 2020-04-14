@@ -151,12 +151,13 @@
   (let [sys (-> system :db :db)]
     #_(spit "data.edn" (prn-str ))
 
-    #_(let [data (crux/tx-log sys (crux/new-tx-log-context sys) nil true)]
-      (clojure.pprint/pprint data (clojure.java.io/writer "data.edn")))
+    #_(doall
+      (let [data (crux/open-tx-log sys #_(crux/new-tx-log-context sys) nil true)]
+        (clojure.pprint/pprint (iterator-seq data) (clojure.java.io/writer "data.edn"))))
 
     #_(crux/attribute-stats sys)
 
-    (count
+    #_(count
       (entity-data (-> system :db :db)
         (crux/q (crux/db (-> system :db :db))
           '{:find [e]
@@ -191,7 +192,7 @@
 
     #_(crux/submit-tx sys)
 
-    #_(doall
+    (doall
       (for [tx (clojure.edn/read-string (slurp "data.edn"))]
         (let [tx' (:crux.api/tx-ops tx)
               tx'' (mapv (fn [[tx _ data]] [tx data]) tx')]

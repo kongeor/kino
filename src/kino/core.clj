@@ -9,7 +9,7 @@
   "Start a production system, unless a system is passed as argument (as in the dev-run task)."
   [& args]
   (let [system (or (first args) #'base-system)]
-    (if-let [nrepl-port (:nrepl-port env)]
+    #_(if-let [nrepl-port (:nrepl-port env)]
       (serv/start-server :port (Integer. nrepl-port)))
     (set-init! system)
     (go)))
