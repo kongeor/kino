@@ -25,6 +25,7 @@
              :prod {:env {:http-port 8000
                           :repl-port 8001}
                     :dependencies [[org.clojure/tools.nrepl "0.2.13"]]}
-             :uberjar {:aot :all}}
+             :uberjar {:aot :all
+                       :uberjar-name "kino.jar"}}
   :main ^:skip-aot kino.core
   :repl-options {:init-ns user})
