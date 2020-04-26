@@ -18,7 +18,8 @@
                  [hiccup "1.0.5"]
                  [com.taoensso/timbre "4.10.0"]
                  [clojurewerkz/quartzite "2.1.0"]
-                 [javax.xml.bind/jaxb-api "2.4.0-b180830.0359"]]
+                 [javax.xml.bind/jaxb-api "2.4.0-b180830.0359"]
+                 [clojure-humanize "0.2.2"]]
   :plugins [[lein-environ "1.0.0"]]
   :profiles {:dev {:source-paths ["dev"]
                    :env {:http-port 3000}}

@@ -3,59 +3,64 @@
     (hiccup [page :refer [html5 include-js include-css]])
     [kino.util :as util]
     [kino.db :as db]
-    [kino.stats :as stats]))
+    [kino.stats :as stats]
+    [clojure.contrib.humanize :as hmn])
+  (:import (java.util Date)))
 
 
 (defn base [content]
   (html5
     [:head
      [:meta {:charset "utf-8"}]
-     [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
      [:meta {:name "description" :content "Kino"}]
      [:meta {:name "author" :content "Kostas Georgiadis"}]
      [:title "Kino"]
 
-     [:link {:href "//fonts.googleapis.com/css?family=Raleway:400,300,600"
-             :rel "stylesheet"
-             :type "text/css"}]
+     [:script {:src "//use.fontawesome.com/releases/v5.3.1/js/all.js"
+               :defer true
+               }]
 
      (include-css
-       "//cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
-       "//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css")
-
-     "<!--[if lt IE 9]>"
-     [:script {:src "https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"}]
-     [:script {:src "https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"}]
-     "<![endif]-->"]
+       "//cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css")]
     [:body
-
-     [:div#main-area.container
-      [:h1 "Kino"]
-      content
-      [:div
-       [:p (str "version " (util/project-version))]
-       [:p (str "total users: " (count (db/get-users)))]]]]))
+     [:section.section
+      [:div.container
+       [:h1.title "Kino"]
+       content
+       [:footer.footer
+        [:div.content.has-text-centered
+         [:p (str "version " (util/project-version))]
+         [:p (str "total users: " (count (db/get-users)))]]]]]]))
 
 (defn index [uid]
   (let [user (and uid (db/get-entity uid))]
     (if user
-      (let [play-data (db/get-play-data uid 20)]
+      (let [play-data (db/get-play-data uid 20)
+            now (inst-ms (Date.))]
         #_(clojure.pprint/pprint play-data)
         (base
-          [:div [:p (str "Welcome " (:display_name user))]
-           [:p [:a {:href "/stats"} "stats"]]
-           (for [p play-data]
-             [:div.row
-              [:div.two.columns
-               [:img.u-max-full-width {:src (get-in p [:kino.play/track :kino.track/album :kino.album/images 1 :url])}]]
-              [:div.ten.columns
-               [:h5 (-> p :kino.play/track :kino.track/name)]
-               [:p (str "by " (->> (-> p :kino.play/track :kino.track/artists)
-                                   (map :kino.artist/name)
-                                   (clojure.string/join ", ")))]
-               [:p (-> p :kino.play/played-at)]]])]))
-      (base [:a.button.button-primary {:href "/login"} "Login"]))))
+          [:div
+           [:div
+            [:p (str "Welcome " (:display_name user))]      ;; TODO style and factor out
+            [:p [:a {:href "/stats"} "stats"]]]
+           [:div
+            (for [part-data (partition-all 6 play-data)]
+              [:div.columns
+               (for [p part-data]
+                 [:div.column
+                  [:div.card
+                   [:div.card-image
+                    [:figure.image
+                     [:img {:src (get-in p [:kino.play/track :kino.track/album :kino.album/images 1 :url])}]]]
+                   [:div.card-content
+                    [:p.title.is-4 (-> p :kino.play/track :kino.track/name)]
+                    [:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
+                                        (map :kino.artist/name))]
+                    ;[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/album)
+                    ;                    (map :kino.album/name))] ;; TODO album
+                    [:p (-> p :kino.play/played-at inst-ms hmn/datetime)]]]])])]]))
+      (base [:a.button.is-primary {:href "/login"} "Login"])))) ;; TODO factor out
 
 (defn stats [uid]
   (let [user (and uid (db/get-entity uid))]
@@ -63,15 +68,22 @@
       (let [album-data (stats/album-plays uid)]
         #_(clojure.pprint/pprint play-data)
         (base
-          [:div [:p (str "Welcome " (:display_name user))]
-           [:p [:a {:href "/"} "home"]]
-           (for [a album-data]
-             [:div.row
-              [:div.two.columns
-               [:img.u-max-full-width {:src (get-in a [:album :kino.album/images 1 :url])}]]
-              [:div.ten.columns
-               [:h5 (-> a :album :kino.album/name)]
-               [:p (str "tracks " (->> (-> a :tracks )
-                                   (clojure.string/join ", ")))]
-               [:p (-> a :played-at)]]])]))
-      (base [:a.button.button-primary {:href "/login"} "Login"]))))
+          [:div
+           [:div
+            [:p (str "Welcome " (:display_name user))]
+            [:p [:a {:href "/"} "home"]]]
+           [:div
+            (for [part-data (partition-all 6 album-data)]
+              [:div.columns
+               (for [a part-data]
+                 [:div.column
+                  [:div.card
+                   [:div.card-image
+                    [:figure.image
+                     [:img {:src (get-in a [:album :kino.album/images 1 :url])}]]]
+                   [:div.card-content
+                    [:p.title.is-4 (-> a :album :kino.album/name)]
+                    [:p (str "tracks " (->> (-> a :tracks)
+                                         (clojure.string/join ", ")))] ;; TODO what to do with
+                    [:p (-> a :played-at inst-ms hmn/datetime)]]]])])]]))
+      (base [:a.button.is-primary {:href "/login"} "Login"]))))
