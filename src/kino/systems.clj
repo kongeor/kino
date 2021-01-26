@@ -1,7 +1,8 @@
 (ns kino.systems
   (:require [system.core :refer [defsystem]]
             (system.components
-              [http-kit :refer [new-web-server]])
+              [http-kit :refer [new-web-server]]
+              [next-jdbc :refer [new-next-jdbc]])
             [kino.handler :refer [app]]
             [kino.db :as db]
             [kino.spot :as spot]
@@ -94,5 +95,10 @@
 
 (defsystem base-system
            [:db (new-db)
+            :ndb (new-next-jdbc :db-spec {:dbtype   "postgresql"
+                                            :dbname   "kino"
+                                            :user     "kino"
+                                            :password "kino"
+                                            })
             :web (new-web-server (Integer. (env :http-port)) app)
             :scheduler (new-scheduler)])

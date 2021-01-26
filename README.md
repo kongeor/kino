@@ -4,6 +4,32 @@ A Clojure library designed to ... well, that part is up to you.
 
 ## Usage
 
+### DB
+
+```sh
+docker run --name kino-postgres -e POSTGRES_PASSWORD=kino -p 5432:5432 -d postgres
+```
+
+```
+docker exec -it kino-postgres sh
+```
+
+```
+psql -U postgres
+```
+
+```sh
+create database kino;
+```
+
+```
+create user kino with password 'kino';
+```
+
+```
+grant all privileges on database kino to kino;
+```
+
 FIXME
 
 ## License

@@ -2,6 +2,7 @@
   (:require [clj-spotify.core :as spotify]
             [system.repl :refer [system]]
             [kino.db :as db]
+            [kino.ndb :as ndb]
             [kino.oauth :as oauth]
             [crux.api :as crux]
             [taoensso.timbre :as timbre])
@@ -77,6 +78,28 @@
                              :kino.artist/name (:name a)})) artists)))
               (:items data))))
 
+;; TODO move
+(defn distinct-by [f coll]
+  (let [groups (group-by f coll)]
+    (map #(first (groups %)) (distinct (map f coll)))))
+
+(comment
+  (distinct-by :foo [{:foo 1} {:foo 2} {:foo 1}]))
+
+(defn get-artist-data [data]
+  (mapv #(map % [:name :id])
+    (distinct-by :id
+      (apply concat
+        (mapv (fn [items]
+                (-> items :track :album :artists))
+          (:items data))))))
+
+(comment
+  (get-artist-data (read-string (slurp "sample.edn"))))
+
+#_(:items (read-string (slurp "sample.edn")))
+
+
 #_(-> data :items first :track :album :artists)
 
 ;; 3
@@ -142,6 +165,11 @@
       (-> system :db :db)
       (prepare-for-tx data''))))
 
+
+(defn persist-all-data-sql [uid data]
+  (let [artists (get-artist-data data)]
+    (ndb/insert-artists artists)))
+
 #_(db/get-entity :36053687af37294a87a6121267aa6e17)
 
 (defn fetch-and-persist [{id :crux.db/id refresh-token :kino.user/refresh-token}]
@@ -150,6 +178,8 @@
         opts {:limit 50}
         opts (if last-played-at (assoc opts :after (inst-ms last-played-at)) opts)
         data (spotify/get-current-users-recently-played-tracks opts access_token)]
+    (spit "sample.edn" (with-out-str (pr data)))
     (timbre/info "persisting" (-> data :items count) "for user" id)
-    (persist-all-data id data)))
+    #_(persist-all-data id data)
+    (persist-all-data-sql id data)))
 

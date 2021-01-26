@@ -1,0 +1,5 @@
+{:up   [
+        "CREATE TABLE artists (id SERIAL, name VARCHAR(1000) NOT NULL, external_id VARCHAR(255) NOT NULL UNIQUE);
+
+        "]
+ :down ["DROP TABLE artists;"]}

@@ -4,15 +4,22 @@
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.danielsz/system "0.4.5"]
+                 [org.danielsz/system "0.4.6" :exclusions [seancorfield/next.jdbc]]
                  [compojure "1.6.1"]
                  [environ"1.1.0"]
                  [ring/ring-defaults "0.3.2"]
                  [ring-middleware-format "0.7.4"]
                  [http-kit "2.4.0-alpha6"]
+
                  [juxt/crux-core "20.04-1.8.1-alpha"]
                  [juxt/crux-rocksdb "20.04-1.8.1-alpha"]
                  [juxt/crux-jdbc "20.04-1.8.1-alpha"]
+
+                 [ragtime "0.8.0"]
+                 [honeysql "1.0.444"]
+                 [seancorfield/next.jdbc "1.1.613"]
+                 [org.clojure/java.data "1.0.86"]
+
                  [org.postgresql/postgresql "42.2.10"]
                  [clj-spotify "0.1.9"]
                  [hiccup "1.0.5"]
