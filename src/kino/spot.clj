@@ -4,8 +4,10 @@
             [kino.db :as db]
             [kino.ndb :as ndb]
             [kino.oauth :as oauth]
+            [kino.util :as util]
             [crux.api :as crux]
-            [taoensso.timbre :as timbre])
+            [taoensso.timbre :as timbre]
+            [kino.util :as util])
   (:import (java.security MessageDigest)))
 
 (def track-keys [:explicit :name :track_number :type])
@@ -94,6 +96,22 @@
                 (-> items :track :album :artists))
           (:items data))))))
 
+(defn get-track-data [track]
+  (let [track' (select-keys track [:name :explicit :id])
+        album (merge
+                 (select-keys (:album track) [:release_data :name :id :total_tracks])
+                 {:img_url (-> track :album :images first :url)})
+        artists (map #(select-keys % [:name :id]) (:artists track))]
+    {:track track'
+     :album album
+     :artists artists}))
+
+(-> (read-string (slurp "sample.edn"))
+  :items
+  first
+  :track
+  get-track-data)
+
 (comment
   (get-artist-data (read-string (slurp "sample.edn"))))
 
@@ -166,13 +184,18 @@
       (prepare-for-tx data''))))
 
 
-(defn persist-all-data-sql [uid data]
-  (let [artists (get-artist-data data)]
-    (ndb/insert-artists artists)))
+(defn persist-all-data-sql [data ext-user-id]
+  (let [items (:items data)]
+    (doall
+      (for [item items]
+        (let [track-data (get-track-data (:track item))
+              played-at (-> item :played_at util/iso-date-str->instant)]
+          (timbre/info "persisting track" track-data played-at ext-user-id)
+          (ndb/insert-all-track-data track-data played-at ext-user-id))))))
 
 #_(db/get-entity :36053687af37294a87a6121267aa6e17)
 
-(defn fetch-and-persist [{id :crux.db/id refresh-token :kino.user/refresh-token}]
+(defn fetch-and-persist [{id :external_id refresh-token :refresh_token}]
   (let [access_token (oauth/get-access-token refresh-token)
         last-played-at (-> (db/get-last-play id) first :kino.play/played-at)
         opts {:limit 50}
@@ -181,5 +204,5 @@
     (spit "sample.edn" (with-out-str (pr data)))
     (timbre/info "persisting" (-> data :items count) "for user" id)
     #_(persist-all-data id data)
-    (persist-all-data-sql id data)))
+    (persist-all-data-sql data id)))
 

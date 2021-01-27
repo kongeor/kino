@@ -3,6 +3,7 @@
     (hiccup [page :refer [html5 include-js include-css]])
     [kino.util :as util]
     [kino.db :as db]
+    [kino.ndb :as ndb]
     [kino.stats :as stats]
     [clojure.contrib.humanize :as hmn])
   (:import (java.util Date)))
@@ -34,33 +35,32 @@
          [:p (str "total users: " (count (db/get-users)))]]]]]]))
 
 (defn index [uid]
-  (let [user (and uid (db/get-entity uid))]
-    (if user
-      (let [play-data (db/get-play-data uid 20)
-            now (inst-ms (Date.))]
-        #_(clojure.pprint/pprint play-data)
-        (base
-          [:div
-           [:div
-            [:p (str "Welcome " (:display_name user))]      ;; TODO style and factor out
-            [:p [:a {:href "/stats"} "stats"]]]
-           [:div
-            (for [part-data (partition-all 6 play-data)]
-              [:div.columns
-               (for [p part-data]
-                 [:div.column
-                  [:div.card
-                   [:div.card-image
-                    [:figure.image
-                     [:img {:src (get-in p [:kino.play/track :kino.track/album :kino.album/images 1 :url])}]]]
-                   [:div.card-content
-                    [:p.title.is-4 (-> p :kino.play/track :kino.track/name)]
-                    [:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
-                                        (map :kino.artist/name))]
-                    ;[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/album)
-                    ;                    (map :kino.album/name))] ;; TODO album
-                    [:p (-> p :kino.play/played-at inst-ms hmn/datetime)]]]])])]]))
-      (base [:a.button.is-primary {:href "/login"} "Login"])))) ;; TODO factor out
+  (if uid
+    (let [play-data (ndb/get-recent-user-plays uid)
+          now (inst-ms (Date.))]
+      (clojure.pprint/pprint play-data)
+      (base
+        [:div
+         [:div
+          #_[:p (str "Welcome " (:display_name user))]        ;; TODO style and factor out
+          [:p [:a {:href "/stats"} "stats"]]]
+         [:div
+          (for [part-data (partition-all 6 play-data)]
+            [:div.columns
+             (for [p part-data]
+               [:div.column
+                [:div.card
+                 [:div.card-image
+                  [:figure.image
+                   [:img {:src (:img_url p)}]]]
+                 [:div.card-content
+                  [:p.title.is-4 (:track_name p)]
+                  #_[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
+                                      (map :kino.artist/name))]
+                  [:p.subtitle.is-6 (:album_name p)]
+                  (if-let [played-at (p :played_at)]
+                    [:p (-> played-at inst-ms hmn/datetime)])]]])])]]))
+    (base [:a.button.is-primary {:href "/login"} "Login"]))) ;; TODO factor out
 
 (defn stats [uid]
   (let [user (and uid (db/get-entity uid))]

@@ -6,6 +6,7 @@
     [ring.middleware.format :refer [wrap-restful-format]]
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
     [kino.db :as db]
+    [kino.ndb :as ndb]
     [kino.spot :as spot]
     [kino.html :as html]
     [kino.oauth :as oauth]
@@ -20,7 +21,7 @@
       (let [{access_token :access_token refresh_token :refresh_token} keys
             user (spotify/get-current-users-profile {} access_token)]
         (if user
-          (let [u (db/upsert-user user refresh_token)]
+          (let [u (ndb/upsert-user user refresh_token)]
             (spot/fetch-and-persist u)
             u))))))
 
@@ -68,7 +69,7 @@
   (GET "/oauth/callback" []
        (fn [{params :params session :session}]
          (let [user (handle-oauth-callback params)
-               session (assoc session :spot.user/id (:crux.db/id user))]
+               session (assoc session :spot.user/id (:id user))]
            (->
              (response/redirect "/")
              (assoc :session session)))))

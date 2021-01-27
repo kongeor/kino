@@ -19,3 +19,6 @@
   (if-let [version (System/getProperty "kino.version")]
     version
     (get (manifest-map (Class/forName "kino.core")) "Leiningen-Project-Version")))
+
+(defn iso-date-str->instant [s]
+  (java.time.Instant/parse s))
