@@ -106,11 +106,12 @@
      :album album
      :artists artists}))
 
-(-> (read-string (slurp "sample.edn"))
-  :items
-  first
-  :track
-  get-track-data)
+(comment
+  (-> (read-string (slurp "sample.edn"))
+    :items
+    first
+    :track
+    get-track-data))
 
 (comment
   (get-artist-data (read-string (slurp "sample.edn"))))
