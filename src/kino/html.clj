@@ -1,6 +1,7 @@
 (ns kino.html
   (:require
     (hiccup [page :refer [html5 include-js include-css]])
+    [environ.core :refer [env]]
     [kino.util :as util]
     [kino.db :as db]
     [kino.ndb :as ndb]
@@ -9,7 +10,7 @@
   (:import (java.util Date)))
 
 
-(defn base [content]
+(defn base [uid content]
   (html5
     [:head
      [:meta {:charset "utf-8"}]
@@ -27,7 +28,22 @@
     [:body
      [:section.section
       [:div.container
-       [:h1.title "Kino"]
+       [:nav.navbar {:role "navigation" :aria-label "main navigation"}
+        [:div.navbar-brand
+         [:a.navbar-item {:href (:app-host env)}
+          [:h1.title "Kino"]]]
+        [:div.navbar-menu
+         [:div.navbar-start
+          [:div.navbar-item
+           [:a.button.is-light {:href "/stats"} "Stats"]]]]
+        [:div.navbar-end
+         [:div.navbar-item
+          [:div.buttons
+           (if-not uid
+             [:a.button.is-primary {:href "/login"}
+              [:strong "Login"]]
+             [:a.button.is-light {:href "/logout"} "Logout"])]]]]
+
        content
        [:footer.footer
         [:div.content.has-text-centered
@@ -35,55 +51,42 @@
          [:p (str "total users: " (count (db/get-users)))]]]]]]))
 
 (defn index [uid]
-  (if uid
-    (let [play-data (ndb/get-recent-user-plays uid)
-          now (inst-ms (Date.))]
-      (clojure.pprint/pprint play-data)
-      (base
-        [:div
-         [:div
-          #_[:p (str "Welcome " (:display_name user))]        ;; TODO style and factor out
-          [:p [:a {:href "/stats"} "stats"]]]
-         [:div
-          (for [part-data (partition-all 6 play-data)]
-            [:div.columns
-             (for [p part-data]
-               [:div.column
-                [:div.card
-                 [:div.card-image
-                  [:figure.image
-                   [:img {:src (:img_url p)}]]]
-                 [:div.card-content
-                  [:p.title.is-4 (:track_name p)]
-                  #_[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
-                                      (map :kino.artist/name))]
-                  [:p.subtitle.is-6 (:album_name p)]
-                  (if-let [played-at (p :played_at)]
-                    [:p (-> played-at inst-ms hmn/datetime)])]]])])]]))
-    (base [:a.button.is-primary {:href "/login"} "Login"]))) ;; TODO factor out
+  (let [play-data (ndb/get-recent-user-plays uid)
+        now (inst-ms (Date.))]
+    (base
+      uid
+      [:div
+       (for [part-data (partition-all 6 play-data)]
+         [:div.columns
+          (for [p part-data]
+            [:div.column
+             [:div.card
+              [:div.card-image
+               [:figure.image
+                [:img {:src (:img_url p)}]]]
+              [:div.card-content
+               [:p.title.is-4 (:track_name p)]
+               #_[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
+                                     (map :kino.artist/name))]
+               [:p.subtitle.is-6 (:album_name p)]
+               (if-let [played-at (p :played_at)]
+                 [:p (-> played-at inst-ms hmn/datetime)])]]])])])))
 
 (defn stats [uid]
-  (let [user (and uid (db/get-entity uid))]
-    (if user
-      (let [album-data (stats/album-plays uid)]
-        #_(clojure.pprint/pprint play-data)
-        (base
-          [:div
-           [:div
-            [:p (str "Welcome " (:display_name user))]
-            [:p [:a {:href "/"} "home"]]]
-           [:div
-            (for [part-data (partition-all 6 album-data)]
-              [:div.columns
-               (for [a part-data]
-                 [:div.column
-                  [:div.card
-                   [:div.card-image
-                    [:figure.image
-                     [:img {:src (get-in a [:album :kino.album/images 1 :url])}]]]
-                   [:div.card-content
-                    [:p.title.is-4 (-> a :album :kino.album/name)]
-                    [:p (str "tracks " (->> (-> a :tracks)
-                                         (clojure.string/join ", ")))] ;; TODO what to do with
-                    [:p (-> a :played-at inst-ms hmn/datetime)]]]])])]]))
-      (base [:a.button.is-primary {:href "/login"} "Login"]))))
+  (let [album-data (stats/album-plays uid)]
+    (base
+      uid
+      [:div
+       (for [part-data (partition-all 6 album-data)]
+         [:div.columns
+          (for [a part-data]
+            [:div.column
+             [:div.card
+              [:div.card-image
+               [:figure.image
+                [:img {:src (:img_url a)}]]]
+              [:div.card-content
+               [:p.title.is-4 (-> a :album_name)]
+               [:p (str "tracks " (->> (-> a :tracks)
+                                    (clojure.string/join ", ")))] ;; TODO what to do with
+               [:p (-> a :played-at inst-ms hmn/datetime)]]]])])])))

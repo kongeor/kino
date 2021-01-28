@@ -66,6 +66,11 @@
   (GET "/login" []
        (fn [{session :session}]
          (response/redirect (oauth/authorize-uri "foo"))))
+  (GET "/logout" []
+    (fn []
+      (->
+        (response/redirect "/")
+        (assoc :session nil))))
   (GET "/oauth/callback" []
        (fn [{params :params session :session}]
          (let [user (handle-oauth-callback params)

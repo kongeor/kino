@@ -5,6 +5,7 @@
               [next-jdbc :refer [new-next-jdbc]])
             [kino.handler :refer [app]]
             [kino.db :as db]
+            [kino.ndb :as ndb]
             [kino.spot :as spot]
             [kino.loggly :as loggly]
             [environ.core :refer [env]]
@@ -59,10 +60,10 @@
 
 (defjob HistoryWatcher
         [ctx]
-        (doseq [u (db/get-users)]
-          (timbre/info "fetching history for user" (:crux.db/id u))
+        (doseq [u (ndb/get-users)]
+          (timbre/info "fetching history for user" (:external_id u))
           (spot/fetch-and-persist u)
-          (timbre/info "processed history for user" (:crux.db/id u))))
+          (timbre/info "processed history for user" (:external_id u))))
 
 (defn str->int [s]
   (Integer/parseInt s))
@@ -96,9 +97,8 @@
 (defsystem base-system
            [:db (new-db)
             :ndb (new-next-jdbc :db-spec {:dbtype   "postgresql"
-                                            :dbname   "kino"
-                                            :user     "kino"
-                                            :password "kino"
-                                            })
+                                          :dbname   (env :pg-db)
+                                          :user     (env :pg-user)
+                                          :password (env :pg-pass)})
             :web (new-web-server (Integer. (env :http-port)) app)
             :scheduler (new-scheduler)])

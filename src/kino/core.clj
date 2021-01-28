@@ -1,6 +1,7 @@
 (ns kino.core
   (:require [system.repl :refer [set-init! go]]
             [kino.systems :refer [base-system]]
+            [kino.ndb :as ndb]
             [environ.core :refer [env]]
             [clojure.tools.nrepl.server :as serv])
   (:gen-class))
@@ -12,5 +13,7 @@
     #_(if-let [nrepl-port (:nrepl-port env)]
       (serv/start-server :port (Integer. nrepl-port)))
     (set-init! system)
-    (go)))
+    (go)
+    ;; TODO check
+    (ndb/migrate)))
 

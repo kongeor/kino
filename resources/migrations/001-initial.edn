@@ -3,7 +3,7 @@
 
          CREATE TABLE albums (id SERIAL PRIMARY KEY, name VARCHAR(1000) NOT NULL, external_id VARCHAR(255) NOT NULL UNIQUE, img_url VARCHAR(1000), total_tracks INTEGER);
 
-         CREATE TABLE tracks (id SERIAL PRIMARY KEY, name VARCHAR(1000) NOT NULL, external_id VARCHAR(255) NOT NULL UNIQUE, explicit BOOLEAN NOT NULL, album_id INTEGER REFERENCES albums(id) NOT NULL);
+         CREATE TABLE tracks (id SERIAL PRIMARY KEY, name VARCHAR(1000) NOT NULL, external_id VARCHAR(255) NOT NULL UNIQUE, explicit BOOLEAN NOT NULL, track_number INTEGER NOT NULL, album_id INTEGER REFERENCES albums(id) NOT NULL);
 
          CREATE TABLE users (id SERIAL PRIMARY KEY, external_id VARCHAR(255) NOT NULL, refresh_token VARCHAR(255));
 

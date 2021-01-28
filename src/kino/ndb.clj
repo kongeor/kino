@@ -4,6 +4,7 @@
             [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs]
             [next.jdbc.date-time]
+            [taoensso.timbre :as timbre]
             [ragtime.jdbc :as ragtime]
             [ragtime.repl :as rrepl]
             [system.repl :refer [system]])
@@ -129,8 +130,8 @@
     (-> system :ndb :datasource)
     (->
       (insert-into :tracks)
-      (columns :name :external_id :explicit :album_id)
-      (values [(conj (mapv track [:name :id :explicit]) album-id)])
+      (columns :name :external_id :explicit :track_number :album_id)
+      (values [(conj (mapv track [:name :id :explicit :track_number]) album-id)])
       sql/format)
     {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
 
@@ -144,6 +145,20 @@
 
 (comment
   (insert-or-get-track {:name "If I May", :explicit false, :id "0CHnZHSNhsNLkLEwSpCQma"} 2))
+
+(defn get-last-played-track [user-id]
+  (jdbc/execute-one!
+    (-> system :ndb :datasource)
+    (->
+      (select :*)
+      (from :user_plays)
+      (where [:= :user_id user-id])
+      (order-by [:played_at :desc])
+      sql/format)
+    {:builder-fn rs/as-unqualified-lower-maps}))
+
+(comment
+  (get-last-played-track 1))
 
 ;; track artists
 
@@ -195,6 +210,15 @@
 
 ;; users
 
+(defn get-users []
+  (jdbc/execute!
+    (-> system :ndb :datasource)
+    (->
+      (select :*)
+      (from :users)
+      sql/format)
+    {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
+
 (defn insert-user [user refresh-token]
   (jdbc/execute-one!
     (-> system :ndb :datasource)
@@ -220,7 +244,6 @@
 
 ;; todo upsert
 (defn upsert-user [user refresh-token]
-  (println "***" user)
   (if-let [u (get-user-by-ext-id (:id user))]
     u
     (insert-user user refresh-token)))
@@ -246,17 +269,17 @@
 
 ;;
 
-(defn get-recent-user-plays [user-id]
+(defn get-recent-user-plays [user-id & {:keys [cnt] :or {cnt 36}}]
   (jdbc/execute!
     (-> system :ndb :datasource)
     (->
-      (select [:t.name :track_name] [:up.played_at :played_at] [:a.name :artist_name] [:a.img_url :img_url])
+      (select [:t.name :track_name] [:up.played_at :played_at] [:a.name :album_name] [:a.img_url :img_url] [:a.id :album_id] :up.track_id :t.track_number :a.total_tracks)
       (from [:user_plays :up])
       (join [:tracks :t] [:= :t.id :up.track_id])
       (left-join [:albums :a] [:= :a.id :t.album_id])
       (where [:= :up.user_id user-id])
       (order-by [:up.played_at :desc])
-      (limit 36)
+      (limit cnt)
       sql/format)
     {:builder-fn rs/as-unqualified-lower-maps}))
 
@@ -265,9 +288,13 @@
 
 ;; migrations
 
-(comment
+(defn migrate []
+  (timbre/info "migrating ...")
   (rrepl/migrate {:datastore  (ragtime/sql-database (-> system :ndb :db-spec))
                   :migrations (ragtime/load-resources "migrations")}))
+
+(comment
+  (migrate))
 
 (comment
   (rrepl/rollback {:datastore  (ragtime/sql-database (-> system :ndb :db-spec))

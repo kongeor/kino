@@ -1,5 +1,6 @@
 (ns kino.stats
-  (:require [kino.db :as db]))
+  (:require [kino.db :as db]
+            [kino.ndb :as ndb]))
 
 (defn ->part-split [pred]
   (let [a (atom nil)
@@ -15,10 +16,10 @@
   (partition-by
     (->part-split (fn [p c]
                     (or (nil? p)
-                        (let [v (-> p :kino.play/track :kino.track/album-id)
-                              t (-> p :kino.play/track :kino.track/number)
-                              v1 (-> c :kino.play/track :kino.track/album-id)
-                              t1 (-> c :kino.play/track :kino.track/number)]
+                        (let [v (-> p :album_id)
+                              t (-> p :track_number)
+                              v1 (-> c :album_id)
+                              t1 (-> c :track_number)]
                           (and (= v v1)
                                (= t (inc t1))
                                #_(or (= t (inc t1))
@@ -34,19 +35,19 @@
     ))
 
 (defn album-plays [uid]
-  (let [data (db/get-play-data uid 2000)]
+  (let [data (ndb/get-recent-user-plays uid :cnt 2000)]
     (->>
       (split-by-conseq-plays data)
       #_(filter #(> (count %) 1))
       #_(map #(-> % first :kino.play/track :kino.track/album))
       (map (fn [a]
-             (let [tracks (map #(-> % :kino.play/track :kino.track/number) a)
-                   album (-> a first :kino.play/track :kino.track/album)]
-               {:album album
+             (let [tracks (map #(-> % :track_number) a)]
+               {:album_name (-> a first :album_name)
+                :img_url (-> a first :img_url)
                 :tracks tracks
-                :play-ratio (/ (count tracks) (:kino.album/total-tracks album))
-                :played-at (first (map :kino.play/played-at a))})))
-      (filter #(> (-> % :play-ratio) 0.5)))))
+                :play-ratio (/ (count tracks) (-> a first :total_tracks))
+                :played-at (first (map :played_at a))})))
+      (filter #(> (-> % :play-ratio) 0.4)))))
 
 
 

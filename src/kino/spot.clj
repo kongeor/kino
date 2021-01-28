@@ -97,7 +97,7 @@
           (:items data))))))
 
 (defn get-track-data [track]
-  (let [track' (select-keys track [:name :explicit :id])
+  (let [track' (select-keys track [:name :explicit :track_number :id])
         album (merge
                  (select-keys (:album track) [:release_data :name :id :total_tracks])
                  {:img_url (-> track :album :images first :url)})
@@ -190,19 +190,20 @@
       (for [item items]
         (let [track-data (get-track-data (:track item))
               played-at (-> item :played_at util/iso-date-str->instant)]
-          (timbre/info "persisting track" track-data played-at ext-user-id)
+          #_(timbre/info "persisting track" track-data played-at ext-user-id)
           (ndb/insert-all-track-data track-data played-at ext-user-id))))))
 
 #_(db/get-entity :36053687af37294a87a6121267aa6e17)
 
-(defn fetch-and-persist [{id :external_id refresh-token :refresh_token}]
+(defn fetch-and-persist [{id :id ext-id :external_id refresh-token :refresh_token}]
   (let [access_token (oauth/get-access-token refresh-token)
-        last-played-at (-> (db/get-last-play id) first :kino.play/played-at)
+        last-played-at (-> (ndb/get-last-played-track id) :played_at)
         opts {:limit 50}
         opts (if last-played-at (assoc opts :after (inst-ms last-played-at)) opts)
+        _ (timbre/info "fetching tracks for user" id "with opts" opts)
         data (spotify/get-current-users-recently-played-tracks opts access_token)]
     (spit "sample.edn" (with-out-str (pr data)))
-    (timbre/info "persisting" (-> data :items count) "for user" id)
+    (timbre/info "persisting" (-> data :items count) "tracks for user" id)
     #_(persist-all-data id data)
-    (persist-all-data-sql data id)))
+    (persist-all-data-sql data ext-id)))
 
