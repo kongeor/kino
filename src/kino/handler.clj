@@ -5,7 +5,6 @@
     [ring.util.response :refer [response content-type charset]]
     [ring.middleware.format :refer [wrap-restful-format]]
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-    [kino.db :as db]
     [kino.ndb :as ndb]
     [kino.spot :as spot]
     [kino.html :as html]
@@ -34,40 +33,17 @@
        (fn [{session :session}]
          (let [uid (:spot.user/id session)]
            (html/stats uid))))
-  (GET "/yo" []
-       (fn [{session :session}]
-         (taoensso.timbre/info "getting yo")
-         (->
-           (response/response (db/get-artists))
-           (assoc :session (assoc session :foo :bar))))
-       #_(->  (get-artists)
-           response
-           (content-type "application/json")
-           (charset "UTF-8")))
   (GET "/count" []
        (fn [{session :session}]
          (let [count (:count session 0)
                session (assoc session :count (inc count))]
            (-> (response (str "You accessed this page " count " times."))
              (assoc :session session)))))
-  (GET "/foo" []
-       (html/index "foo"))
-  (GET "/boom" []
-       (ex-info "boom!" {}))
-  (GET "/tracks" []
-       (db/get-tracks))
-  (GET "/entity/:id" []
-       (fn [{params :params}]
-         (let [e (db/get-entity (-> params :id keyword))]
-           (-> e
-             response
-             (content-type "application/json")
-             (charset "UTF-8")))))
   (GET "/login" []
        (fn [{session :session}]
          (response/redirect (oauth/authorize-uri "foo"))))
   (GET "/logout" []
-    (fn []
+    (fn [req]
       (->
         (response/redirect "/")
         (assoc :session nil))))

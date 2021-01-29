@@ -1,6 +1,5 @@
 (ns kino.stats
-  (:require [kino.db :as db]
-            [kino.ndb :as ndb]))
+  (:require [kino.ndb :as ndb]))
 
 (defn ->part-split [pred]
   (let [a (atom nil)
@@ -25,14 +24,6 @@
                                #_(or (= t (inc t1))
                                    #_(= t t1)))))))
     data))
-
-(comment
-  (->>
-    (db/get-play-data :08uc4dh5sl6f8888eydkq2sbz)
-    (map :kino.play/track)
-    (map #(select-keys % [:kino.track/album-id :kino.track/number]))
-    split-by-conseq-plays
-    ))
 
 (defn album-plays [uid]
   (let [data (ndb/get-recent-user-plays uid :cnt 2000)]

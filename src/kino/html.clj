@@ -3,7 +3,6 @@
     (hiccup [page :refer [html5 include-js include-css]])
     [environ.core :refer [env]]
     [kino.util :as util]
-    [kino.db :as db]
     [kino.ndb :as ndb]
     [kino.stats :as stats]
     [clojure.contrib.humanize :as hmn])
@@ -48,7 +47,7 @@
        [:footer.footer
         [:div.content.has-text-centered
          [:p (str "version " (util/project-version))]
-         [:p (str "total users: " (count (db/get-users)))]]]]]]))
+         #_[:p (str "total users: " (count (db/get-users)))]]]]]]))
 
 (defn index [uid]
   (let [play-data (ndb/get-recent-user-plays uid)

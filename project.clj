@@ -11,10 +11,6 @@
                  [ring-middleware-format "0.7.4"]
                  [http-kit "2.4.0-alpha6"]
 
-                 [juxt/crux-core "20.04-1.8.1-alpha"]
-                 [juxt/crux-rocksdb "20.04-1.8.1-alpha"]
-                 [juxt/crux-jdbc "20.04-1.8.1-alpha"]
-
                  [ragtime "0.8.0"]
                  [honeysql "1.0.444"]
                  [seancorfield/next.jdbc "1.1.613"]

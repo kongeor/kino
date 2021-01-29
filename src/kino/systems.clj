@@ -4,7 +4,7 @@
               [http-kit :refer [new-web-server]]
               [next-jdbc :refer [new-next-jdbc]])
             [kino.handler :refer [app]]
-            [kino.db :as db]
+            #_[kino.db :as db]
             [kino.ndb :as ndb]
             [kino.spot :as spot]
             [kino.loggly :as loggly]
@@ -12,8 +12,6 @@
             [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
             [system.repl :refer [system]]
-            [crux.api :as crux]
-            [crux.jdbc]
             [clojurewerkz.quartzite.scheduler :as qs]
             [clojurewerkz.quartzite.triggers :as t]
             [clojurewerkz.quartzite.schedule.simple :refer [schedule repeat-forever with-interval-in-minutes]]
@@ -30,7 +28,7 @@
 
 ;; crux
 
-(defrecord CruxDb [db]
+#_(defrecord CruxDb [db]
   component/Lifecycle
   (start [component]
     (let [db
@@ -53,7 +51,7 @@
       (.close db)
       component)))
 
-(defn- new-db []
+#_(defn- new-db []
   (map->CruxDb nil))
 
 ;; quartzite
@@ -95,7 +93,8 @@
   (map->Scheduler {}))
 
 (defsystem base-system
-           [:db (new-db)
+           [
+            ; :db (new-db)
             :ndb (new-next-jdbc :db-spec {:dbtype   "postgresql"
                                           :dbname   (env :pg-db)
                                           :user     (env :pg-user)
