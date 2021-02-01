@@ -25,8 +25,8 @@
                                    #_(= t t1)))))))
     data))
 
-(defn album-plays [uid]
-  (let [data (ndb/get-recent-user-plays uid :cnt 2000)]
+(defn album-plays [db uid]
+  (let [data (ndb/get-recent-user-plays db uid :cnt 2000)]
     (->>
       (split-by-conseq-plays data)
       #_(filter #(> (count %) 1))

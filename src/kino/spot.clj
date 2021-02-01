@@ -46,20 +46,20 @@
   (get-artist-data (read-string (slurp "sample.edn"))))
 
 
-(defn persist-all-data-sql [data ext-user-id]
+(defn persist-all-data-sql [db data ext-user-id]
   (let [items (:items data)]
     (doall
       (for [item items]
         (let [track-data (get-track-data (:track item))
               played-at (-> item :played_at util/iso-date-str->instant)]
           #_(timbre/info "persisting track" track-data played-at ext-user-id)
-          (ndb/insert-all-track-data track-data played-at ext-user-id))))))
+          (ndb/insert-all-track-data db track-data played-at ext-user-id))))))
 
 #_(db/get-entity :36053687af37294a87a6121267aa6e17)
 
-(defn fetch-and-persist [{id :id ext-id :external_id refresh-token :refresh_token}]
+(defn fetch-and-persist [db {id :id ext-id :external_id refresh-token :refresh_token}]
   (let [access_token (oauth/get-access-token refresh-token)
-        last-played-at (-> (ndb/get-last-played-track id) :played_at)
+        last-played-at (-> (ndb/get-last-played-track db id) :played_at)
         opts {:limit 50}
         opts (if last-played-at (assoc opts :after (inst-ms last-played-at)) opts)
         _ (timbre/info "fetching tracks for user" id "with opts" opts)
@@ -67,5 +67,5 @@
     (spit "sample.edn" (with-out-str (pr data)))
     (timbre/info "persisting" (-> data :items count) "tracks for user" id)
     #_(persist-all-data id data)
-    (persist-all-data-sql data ext-id)))
+    (persist-all-data-sql db data ext-id)))
 

@@ -1,6 +1,6 @@
 (ns kino.html
   (:require
-    (hiccup [page :refer [html5 include-js include-css]])
+    [hiccup [page :refer [html5 include-js include-css]]]
     [environ.core :refer [env]]
     [kino.util :as util]
     [kino.ndb :as ndb]
@@ -23,34 +23,34 @@
                }]
 
      (include-css
-       "//cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css")]
+       "//cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css")]
     [:body
-     [:section.section
-      [:div.container
-       [:nav.navbar {:role "navigation" :aria-label "main navigation"}
-        [:div.navbar-brand
-         [:a.navbar-item {:href (:app-host env)}
-          [:h1.title "Kino"]]]
-        [:div.navbar-menu
-         [:div.navbar-start
-          [:div.navbar-item
-           [:a.button.is-light {:href "/stats"} "Stats"]]]]
-        [:div.navbar-end
+     [:div.container
+      [:nav.navbar.mb-4 {:role "navigation" :aria-label "main navigation"}
+       [:div.navbar-brand
+        [:a.navbar-item {:href (:app-host env)}
+         [:h1.title "Kino"]]]
+       [:div.navbar-menu
+        [:div.navbar-start
          [:div.navbar-item
-          [:div.buttons
-           (if-not uid
-             [:a.button.is-primary {:href "/login"}
-              [:strong "Login"]]
-             [:a.button.is-light {:href "/logout"} "Logout"])]]]]
+          [:a.button.is-light {:href "/stats"} "Stats"]]]]
+       [:div.navbar-end
+        [:div.navbar-item
+         [:div.buttons
+          (if-not uid
+            [:a.button.is-primary {:href "/login"}
+             [:strong "Login"]]
+            [:a.button.is-light {:href "/logout"} "Logout"])]]]]
 
-       content
-       [:footer.footer
-        [:div.content.has-text-centered
-         [:p (str "version " (util/project-version))]
-         #_[:p (str "total users: " (count (db/get-users)))]]]]]]))
+      [:div.mb-4
+       content]
+      [:footer.footer
+       [:div.content.has-text-centered
+        [:p (str "version " (util/project-version))]
+        #_[:p (str "total users: " (count (db/get-users)))]]]]]))
 
-(defn index [uid]
-  (let [play-data (ndb/get-recent-user-plays uid)
+(defn index [db uid]
+  (let [play-data (ndb/get-recent-user-plays db uid)
         now (inst-ms (Date.))]
     (base
       uid
@@ -71,21 +71,24 @@
                (if-let [played-at (p :played_at)]
                  [:p (-> played-at inst-ms hmn/datetime)])]]])])])))
 
-(defn stats [uid]
-  (let [album-data (stats/album-plays uid)]
+(defn stats [db uid]
+  (let [album-data (stats/album-plays db uid)]
     (base
       uid
       [:div
        (for [part-data (partition-all 6 album-data)]
          [:div.columns
-          (for [a part-data]
-            [:div.column
-             [:div.card
-              [:div.card-image
-               [:figure.image
-                [:img {:src (:img_url a)}]]]
-              [:div.card-content
-               [:p.title.is-4 (-> a :album_name)]
-               [:p (str "tracks " (->> (-> a :tracks)
-                                    (clojure.string/join ", ")))] ;; TODO what to do with
-               [:p (-> a :played-at inst-ms hmn/datetime)]]]])])])))
+          (let [c (count part-data)
+                pd (concat part-data (repeat (- 6 c) nil))]
+            (for [a pd]
+              [:div.column
+               (when a
+                 [:div.card
+                  [:div.card-image
+                   [:figure.image
+                    [:img {:src (:img_url a)}]]]
+                  [:div.card-content
+                   [:p.title.is-4 (-> a :album_name)]
+                   [:p (str "tracks " (->> (-> a :tracks)
+                                        (clojure.string/join ", ")))] ;; TODO what to do with
+                   [:p (-> a :played-at inst-ms hmn/datetime)]]])]))])])))
