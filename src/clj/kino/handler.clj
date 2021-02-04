@@ -4,15 +4,22 @@
     [compojure.core :refer [defroutes GET POST ANY]]
     [ring.util.response :refer [response content-type charset]]
     [ring.middleware.format :refer [wrap-restful-format]]
-    [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+    [muuntaja.core :as m]
+    [ring.middleware.defaults :refer [wrap-defaults site-defaults api-defaults]]
     [kino.ndb :as ndb]
     [kino.spot :as spot]
     [kino.html :as html]
     [kino.oauth :as oauth]
     [clj-spotify.core :as spotify]
     [system.repl :refer [system]]
+    [taoensso.timbre :as timbre]
     [ring.util.response :as response]))
 
+;; utils
+
+(defn json [content]
+  (response/content-type {:status 200
+                          :body (m/encode "application/json" content)} "application/json"))
 
 (defn- handle-oauth-callback [db params]
   (let [keys (oauth/get-authentication-response "foo" params)]
@@ -24,11 +31,25 @@
             (spot/fetch-and-persist db u)
             u))))))
 
+(defn me-handler [{session :session db :db}]
+  (let [uid (:spot.user/id session)]
+    (json {:id uid})))
+
+(defn plays-handler [{session :session db :db}]
+  (let [uid (:spot.user/id session)]
+    (timbre/info "fetching plays for" uid)
+    (json (ndb/get-recent-user-plays db uid))))
+
 (defroutes routes
   (GET "/" []
-       (fn [{session :session db :db :as req}]
+    (fn []
+      (response/resource-response "public/index.html")
+      #_(response/resource-response "index.html" {:root "public"}))
+    #_(fn [{session :session db :db :as req}]
          (let [uid (:spot.user/id session)]
            (html/index db uid))))
+  (GET "/api/me" [] me-handler)
+  (GET "/api/plays" [] plays-handler)
   (GET "/stats" []
        (fn [{session :session db :db}]
          (let [uid (:spot.user/id session)]
@@ -39,15 +60,15 @@
                session (assoc session :count (inc count))]
            (-> (response (str "You accessed this page " count " times."))
              (assoc :session session)))))
-  (GET "/login" []
+  (GET "/api/login" []
        (fn [{session :session}]
          (response/redirect (oauth/authorize-uri "foo"))))
-  (GET "/logout" []
+  (GET "/api/logout" []
     (fn [req]
       (->
         (response/redirect "/")
         (assoc :session nil))))
-  (GET "/oauth/callback" []
+  (GET "/api/oauth/callback" []
        (fn [{params :params session :session db :db}]
          (let [user (handle-oauth-callback db params)
                session (assoc session :spot.user/id (:id user))]
@@ -68,11 +89,20 @@
            {:status 500
             :body "Oh no! :'("}))))
 
+(defn wrap-dir-index [handler]
+  (fn [req]
+    (handler
+      (update
+        req
+        :uri
+        #(if (= "/" %) "/index.html" %)))))
+
 (defn app [db]
   (-> routes
     (wrap-db db)
-    (wrap-restful-format :formats [:json])
     (wrap-defaults (-> site-defaults
                      #_(assoc-in [:session :cookie-attrs :max-age] 3600)
-                     (assoc-in [:session :cookie-attrs :same-site] :lax))) ;; TODO check
+                     (assoc-in [:session :cookie-attrs :same-site] :lax)
+                     (assoc-in [:security :anti-forgery] false))) ;; TODO check
+    wrap-dir-index
     wrap-exception))

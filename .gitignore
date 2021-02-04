@@ -16,3 +16,8 @@ pom.xml.asc
 /.idea
 
 run.sh
+
+/resources/public/js
+/resources/public/test
+/.shadow-cljs
+node_modules

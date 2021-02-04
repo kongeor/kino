@@ -1,0 +1,24 @@
+{
+  "name": "kino",
+  "version": "0.0.1",
+  "description": "",
+  "license": "AGPL",
+  "scripts": {
+    "dev": "shadow-cljs watch app",
+    "release": "shadow-cljs release app",
+    "server": "shadow-cljs server",
+    "clean": "rm -rf target; rm -rf resources/public/js",
+    "clean-win": "rmdir /s /q resources/public/js & rmdir /s /q target"
+  },
+  "dependencies": {
+    "create-react-class": "^15.6.3",
+    "highlight.js": "9.18.1",
+    "react": "17.0.1",
+    "react-dom": "17.0.1"
+  },
+  "devDependencies": {
+    "shadow-cljs": "2.11.17",
+    "react-flip-move": "^3.0.2",
+    "react-highlight.js": "^1.0.7"
+  }
+}

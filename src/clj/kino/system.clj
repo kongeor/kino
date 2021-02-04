@@ -14,7 +14,7 @@
                :password (env :pg-pass)})
 
 (def config
-  {:adapter/jetty {:handler (ig/ref :handler/run-app) :port (Integer. (env :http-port))}
+  {:adapter/jetty {:handler (ig/ref :handler/run-app) :port (Integer. (or (env :http-port) 3000))}
    :handler/run-app {:db (ig/ref :database.sql/connection)}
    :database.sql/connection db-spec})
 
