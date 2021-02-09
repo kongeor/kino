@@ -4,6 +4,8 @@
             [re-frame.core :refer [subscribe dispatch]]
             [clojure.string :as str :refer [trim split]]))
 
+;; main wrapper
+
 (defn main-wrapper [content]
   [:div.container
    [:nav.navbar.mb-4 {:role "navigation" :aria-label "main navigation"}
@@ -27,8 +29,33 @@
      [:p (str "version cljs")]
      #_[:p (str "total users: " (count (db/get-users)))]]]])
 
+;; home
+
+(defn play-card [p]
+  [:div.card
+   [:div.card-image
+    [:figure.image
+     [:img {:src (:img_url p)}]]]
+   [:div.card-content
+    [:p.title.is-4 (:track_name p)]
+    #_[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
+                          (map :kino.artist/name))]
+    [:p.subtitle.is-6 (:album_name p)]
+    #_(if-let [played-at (p :played_at)]
+      [:p (-> played-at inst-ms hmn/datetime)])]])
+
+(defn user-plays-view []
+  [:div
+   (if-let [play-data @(subscribe [:kino.subs/plays])]
+     (map-indexed
+       (fn [idx item]
+         ^{:key idx} [:div.columns
+          (for [p item]
+            ^{:key (:played_at p)} [:div.column [play-card p]])])
+       (partition-all 6 play-data)))])
+
 (defn home []
-  [:h2 "home"])
+  [user-plays-view])
 
 (defn login []
   [:h2 "login"])

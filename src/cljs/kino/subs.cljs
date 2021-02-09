@@ -5,3 +5,8 @@
  :active-page
  (fn [db _]
    (:active-page db)))
+
+(reg-sub
+  ::plays
+  (fn [db _]
+    (:plays db)))
