@@ -45,18 +45,19 @@
 (reg-event-fx
  ::fetch-user-plays
  (fn-traced [{:keys [db]} [_ _]]
-  {:db   (assoc db :fetching-user-plays true)
-   :http-xhrio {:method          :get
-                :uri             (str "/api/plays")
-                :timeout         8000                                           ;; optional see API docs
-                :response-format (json-response-format {:keywords? true})  ;; IMPORTANT!: You must provide this.
-                :on-success      [::success-user-plays-result]
-                :on-failure      [::failed-user-plays-result]}}))
+  (let [last-played-at (-> db :plays last :played_at)]
+   {:db         (assoc db :fetching-user-plays true)
+    :http-xhrio {:method          :get
+                 :uri             (str "/api/plays?before=" (or last-played-at ""))
+                 :timeout         8000                      ;; optional see API docs
+                 :response-format (json-response-format {:keywords? true}) ;; IMPORTANT!: You must provide this.
+                 :on-success      [::success-user-plays-result]
+                 :on-failure      [::failed-user-plays-result]}})))
 
 (reg-event-db
  ::success-user-plays-result
  (fn-traced [db [_ result]]
-  (assoc db :plays result :fetching-user-plays false)))
+  (assoc db :plays (concat (:plays db) result) :fetching-user-plays false)))
 
 (reg-event-db
  ::failed-user-plays-result

@@ -1,4 +1,14 @@
-(ns kino.util)
+(ns kino.util
+  (:require [clojure.string :as string]))
+
+(defn str->int [s]
+  (Integer/parseInt s))
+
+(defn trim-to-nil [s]
+  (when s
+    (let [s' (string/trim s)]
+      (if-not (empty? s')
+        s'))))
 
 (defn manifest-map
   "Returns the mainAttributes of the manifest of the passed in class as a map."

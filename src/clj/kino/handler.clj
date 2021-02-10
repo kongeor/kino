@@ -10,6 +10,7 @@
     [kino.spot :as spot]
     [kino.html :as html]
     [kino.oauth :as oauth]
+    [kino.util :as u]
     [clj-spotify.core :as spotify]
     [system.repl :refer [system]]
     [taoensso.timbre :as timbre]
@@ -35,10 +36,12 @@
   (let [uid (:spot.user/id session)]
     (json {:id uid})))
 
-(defn plays-handler [{session :session db :db}]
-  (let [uid (:spot.user/id session)]
-    (timbre/info "fetching plays for" uid)
-    (json (ndb/get-recent-user-plays db uid))))
+(defn plays-handler [{session :session db :db params :query-params}]
+  (let [uid (:spot.user/id session)
+        before-str (u/trim-to-nil (get params "before"))
+        before (when before-str (u/iso-date-str->instant before-str))]
+    (timbre/info "fetching plays for" uid "before" before)
+    (json (ndb/get-recent-user-plays db uid :before before))))
 
 (defroutes routes
   (GET "/" []

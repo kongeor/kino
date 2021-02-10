@@ -7,6 +7,11 @@
    (:active-page db)))
 
 (reg-sub
+  ::user
+  (fn [db _]
+    (:user db)))
+
+(reg-sub
   ::plays
   (fn [db _]
     (:plays db)))

@@ -6,7 +6,8 @@
             [next.jdbc.date-time]
             [taoensso.timbre :as timbre]
             [ragtime.jdbc :as ragtime]
-            [ragtime.repl :as rrepl])
+            [ragtime.repl :as rrepl]
+            [kino.util :as u])
   (:refer-clojure :exclude [update]))
 
 (def q {:select [:event_offset]
@@ -267,7 +268,7 @@
 
 ;;
 
-(defn get-recent-user-plays [db user-id & {:keys [cnt] :or {cnt 36}}]
+(defn get-recent-user-plays [db user-id & {:keys [cnt before] :or {cnt 36 before (java.time.Instant/now)}}]
   (jdbc/execute!
     db
     (->
@@ -275,7 +276,7 @@
       (from [:user_plays :up])
       (join [:tracks :t] [:= :t.id :up.track_id])
       (left-join [:albums :a] [:= :a.id :t.album_id])
-      (where [:= :up.user_id user-id])
+      (where [:= :up.user_id user-id] (when before [:< :up.played_at before]))
       (order-by [:up.played_at :desc])
       (limit cnt)
       sql/format)
@@ -293,6 +294,15 @@
 
 (comment
   (migrate kino.system/db-spec))
+
+(comment
+  (get-recent-user-plays (:database.sql/connection integrant.repl.state/system)
+    2 :cnt 2 :before (u/iso-date-str->instant "2021-02-06T14:27:14Z")))
+
+(comment
+  (get-recent-user-plays (:database.sql/connection integrant.repl.state/system)
+    2 :cnt 2 :before nil))
+
 
 #_(comment
   (rrepl/rollback {:datastore  (ragtime/sql-database (-> system :ndb :db-spec))
