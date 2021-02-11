@@ -5,10 +5,16 @@
             :url "http://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.danielsz/system "0.4.6" :exclusions [seancorfield/next.jdbc]]
+
+                 [integrant "0.8.0"]
+                 [integrant/repl "0.3.1"]
+
                  [compojure "1.6.1"]
                  [environ"1.1.0"]
                  [ring/ring-defaults "0.3.2"]
                  [ring-middleware-format "0.7.4"]
+                 [metosin/muuntaja "0.6.7"]
+                 [metosin/jsonista "0.3.1"]
                  [http-kit "2.4.0-alpha6"]
 
                  [ragtime "0.8.0"]
@@ -24,6 +30,7 @@
                  [javax.xml.bind/jaxb-api "2.4.0-b180830.0359"]
                  [clojure-humanize "0.2.2"]]
   :plugins [[lein-environ "1.0.0"]]
+  :source-paths ["src/clj" "src/cljs"]
   :profiles {:dev {:source-paths ["dev"]
                    :env {:http-port 3000}}
              :prod {:env {:http-port 8000

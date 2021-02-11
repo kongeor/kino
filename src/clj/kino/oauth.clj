@@ -15,7 +15,7 @@
   {:client-id (:spotify-client-id env)
    :client-secret (:spotify-client-secret env)
    :authorize-uri  "https://accounts.spotify.com/authorize"
-   :redirect-uri (str (:app-host env) "/oauth/callback")
+   :redirect-uri (str (:app-host env) "/api/oauth/callback")
    :access-token-uri "https://accounts.spotify.com/api/token"
    :scope "user-read-recently-played"})
 
