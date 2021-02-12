@@ -285,6 +285,17 @@
 (comment
   (get-recent-user-plays 1))
 
+;; playlists
+
+(defn insert-playlist [db playlist]
+  (jdbc/execute-one!
+    db
+    (->
+      (insert-into :playlists)
+      (values [playlist])
+      sql/format)
+    {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
+
 ;; migrations
 
 (defn migrate [db-spec]
@@ -292,8 +303,15 @@
   (rrepl/migrate {:datastore  (ragtime/sql-database db-spec)
                   :migrations (ragtime/load-resources "migrations")}))
 
+(defn rollback [db-spec]
+  (timbre/info "rolling back ...")
+  (rrepl/rollback {:datastore  (ragtime/sql-database db-spec)
+                  :migrations (ragtime/load-resources "migrations")}))
+
 (comment
-  (migrate kino.system/db-spec))
+  (migrate kino.system/db-spec)
+  #_(rollback kino.system/db-spec)
+  )
 
 (comment
   (get-recent-user-plays (:database.sql/connection integrant.repl.state/system)

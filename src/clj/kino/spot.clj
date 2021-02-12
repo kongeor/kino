@@ -64,8 +64,56 @@
         opts (if last-played-at (assoc opts :after (inst-ms last-played-at)) opts)
         _ (timbre/info "fetching tracks for user" id "with opts" opts)
         data (spotify/get-current-users-recently-played-tracks opts access_token)]
-    (spit "sample.edn" (with-out-str (pr data)))
     (timbre/info "persisting" (-> data :items count) "tracks for user" id)
     #_(persist-all-data id data)
     (persist-all-data-sql db data ext-id)))
 
+(defn format-playlist-for-db [sp-pl]
+  {:name (:name sp-pl)
+   :external_id (:id sp-pl)
+   :external_owner_id (-> sp-pl :owner :id)
+   :snapshot_id (:snapshot_id sp-pl)
+   :public (:public sp-pl)
+   :total_tracks (-> sp-pl :tracks :total)
+   :type (:type sp-pl)
+   :collaborative (:collaborative sp-pl)
+   :description (:description sp-pl)
+   :img_url (-> sp-pl :images first :url)})
+
+(defn persist-playlist [db spotify-playlist]
+  (let [playlist (format-playlist-for-db spotify-playlist)
+        user (ndb/get-user-by-ext-id db (:external_owner_id playlist))
+        playlist' (assoc playlist :owner_id (:id user))]
+    (ndb/insert-playlist db playlist')))
+
+(defn fetch-and-persist-playlists [db {id :id ext-id :external_id refresh-token :refresh_token}]
+  (let [access_token (oauth/get-access-token refresh-token)
+        opts {:user_id ext-id :limit 50}                    ;; TODO fetch moar
+        _ (timbre/info "fetching playlists for user" id "with opts" opts)
+        data (spotify/get-a-list-of-a-users-playlists opts access_token)]
+    (timbre/info "persisting" (-> data :items count) "playlists for user" id)
+    #_(persist-all-data id data)
+    (doall
+      (for [playlist (:items data)]
+        (persist-playlist db playlist)))))
+
+(comment
+  (let [{:keys [external_id refresh_token]} (->
+             (ndb/get-users (:database.sql/connection integrant.repl.state/system))
+             first)]
+    (def access-token (oauth/get-access-token refresh_token))))
+
+(comment
+  (let [db (ndb/get-users (:database.sql/connection integrant.repl.state/system))
+        {:keys [external_id]} (-> db first)
+        playlists (spotify/get-a-list-of-a-users-playlists {:user_id external_id} access-token)]
+    playlists))
+
+(comment
+  (let [db (:database.sql/connection integrant.repl.state/system)
+        user (-> (ndb/get-users db) first)]
+    (fetch-and-persist-playlists db user)))
+
+(comment
+  (ndb/get-user-by-ext-id
+    "08uc4dh5sl6f8888eydkq2sbz"))

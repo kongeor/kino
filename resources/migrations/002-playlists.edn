@@ -1,0 +1,10 @@
+{:up   ["ALTER TABLE users ADD UNIQUE(external_id)"
+        "CREATE TABLE playlists (id SERIAL PRIMARY KEY, name VARCHAR(1000) NOT NULL, external_id VARCHAR(255) NOT NULL UNIQUE,
+         owner_id INTEGER REFERENCES users(id), external_owner_id VARCHAR(255) REFERENCES users(external_id),
+         snapshot_id VARCHAR(255) NOT NULL, public BOOLEAN NOT NULL, total_tracks INTEGER, type VARCHAR(255), description TEXT,
+         collaborative BOOLEAN NOT NULL, img_url VARCHAR(1000));
+        "]
+ :down ["
+         DROP TABLE playlists;
+         "
+        ]}
