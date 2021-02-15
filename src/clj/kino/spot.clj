@@ -111,7 +111,7 @@
 
 (comment
   (let [db (:database.sql/connection integrant.repl.state/system)
-        user (-> (ndb/get-users db) first)]
+        user (-> (ndb/get-users db) second)]
     (fetch-and-persist-playlists db user)))
 
 (comment

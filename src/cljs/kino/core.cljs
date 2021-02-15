@@ -8,7 +8,8 @@
             [kino.views]))
 
 (defn ^:export main []
-  (dispatch-sync [:kino.events/initialize-db])
+  (dispatch [:kino.events/initialize-db])
+  (dispatch [:kino.events/fetch-current-user])
   (router/start!)
   (dom/render [kino.views/kino-app]
     (.getElementById js/document "app")))

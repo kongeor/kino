@@ -5,6 +5,8 @@
 
 (def routes
   ["/" {""         :home
+        "playlists" :playlists
+
         "login"    :login
         "logout"   :logout
         "stats"    :stats

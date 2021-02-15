@@ -43,6 +43,11 @@
     (timbre/info "fetching plays for" uid "before" before)
     (json (ndb/get-recent-user-plays db uid :before before))))
 
+(defn playlists-handler [{session :session db :db}]
+  (let [uid (:spot.user/id session)]
+    (timbre/info "fetching playlists for" uid)
+    (json (ndb/get-user-playlists db uid))))
+
 (defroutes routes
   (GET "/" []
     (fn []
@@ -53,6 +58,7 @@
            (html/index db uid))))
   (GET "/api/me" [] me-handler)
   (GET "/api/plays" [] plays-handler)
+  (GET "/api/playlists" [] playlists-handler)
   (GET "/stats" []
        (fn [{session :session db :db}]
          (let [uid (:spot.user/id session)]

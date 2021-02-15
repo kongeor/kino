@@ -296,6 +296,16 @@
       sql/format)
     {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
 
+(defn get-user-playlists [db user-id]
+  (jdbc/execute!
+    db
+    (->
+      (select :p.id :p.name :p.description :p.img_url :p.total_tracks)
+      (from [:playlists :p])
+      (where [:= :p.owner_id user-id])
+      sql/format)
+    {:builder-fn rs/as-unqualified-lower-maps}))
+
 ;; migrations
 
 (defn migrate [db-spec]

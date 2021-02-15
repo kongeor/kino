@@ -16,9 +16,9 @@
         [:h1.title "Kino"]]]
       [:div.navbar-menu
        [:div.navbar-start
-        (when nil                                           ;; TODO
+        (when uid
           [:div.navbar-item
-           [:a.button.is-light {:href "/stats"} "Stats"]])]]
+           [:a.button.is-light {:href "/playlists"} "Playlists"]])]]
       [:div.navbar-end
        [:div.navbar-item
         [:div.buttons
@@ -33,7 +33,7 @@
        [:p (str "version cljs")]
        #_[:p (str "total users: " (count (db/get-users)))]]]]))
 
-;; home
+;; user plays
 
 (defn play-card [p]
   [:div.card
@@ -63,6 +63,35 @@
        [:div.columns.is-centered
         [:button.button.is-primary {:on-click #(rf/dispatch [:kino.events/fetch-user-plays])} "Load moar"]]])))
 
+;; user playlists
+
+(defn playlist-card [p]
+  (when (:name p)
+    [:div.card
+     [:div.card-image
+      [:figure.image
+       [:img {:src (:img_url p)}]]]
+     [:div.card-content
+      [:p.title.is-4 (:name p)]
+      [:p.subtitle.is-6 (str "Total tracks: ") (:total_tracks p)]
+      [:p.subtitle.is-6 (:description p)]]]))
+
+(defn user-playlists-view []
+  (let [user @(subscribe [:kino.subs/user])
+        uid (:id user)]
+    (when uid
+      [:div
+       (if-let [playlist-data @(subscribe [:kino.subs/playlists])]
+         (let [n-to-fill (- 6 (mod (count playlist-data) 6))
+               all-data (concat playlist-data (mapv (fn [i] {:id (- i)}) (range n-to-fill)))
+               part-data (partition-all 6 all-data)]
+           (map-indexed
+             (fn [idx item]
+               ^{:key idx} [:div.columns
+                            (for [p item]
+                              ^{:key (:id p)} [:div.column [playlist-card p]])])
+             part-data)))])))
+
 (defn home []
   [user-plays-view])
 
@@ -74,6 +103,10 @@
 
 (defn stats []
   [:h2 "stats"])
+
+(defn playlists []
+  (rf/dispatch [:kino.events/fetch-user-playlists])
+  [user-playlists-view])
 
 (defn nav []
   [:ul
@@ -87,11 +120,15 @@
   (case (:page page-name)
     :home     [home]
     :stats    [stats]
+    :playlists [playlists]
     :login    [login]
     :profile  [profile]
     [home]))
 
 (defn kino-app []
-  (let [active-page @(subscribe [:active-page])]
-    (main-wrapper
-      [pages active-page])))
+  (let [ready? (subscribe [:initialized?])]
+    (if-not @ready?
+      [:div "initializing ..."]
+      (let [active-page @(subscribe [:active-page])]
+        (main-wrapper
+          [pages active-page])))))

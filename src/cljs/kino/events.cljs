@@ -9,11 +9,10 @@
    [clojure.string :as str]))
 
 
-(reg-event-fx
+(reg-event-db
  ::initialize-db
- (fn-traced [_ _]
-  {:db default-db
-   :dispatch-n [[::fetch-current-user]]}))
+ (fn-traced [db _]
+  (assoc db :initialized? true)))
 
 (reg-event-db
  ::set-active-page
@@ -33,7 +32,7 @@
 
 (reg-event-fx
  ::success-current-user-result
- (fn-traced [db [_ result]]
+ (fn-traced [{:keys [db]} [_ result]]
   {:db (assoc db :user result :fetching-current-user false)
    :dispatch [::fetch-user-plays]}))
 
@@ -63,3 +62,26 @@
  ::failed-user-plays-result
  (fn-traced [db [_ _]]
   (assoc db :fetching-user-plays false)))
+
+; playlists
+
+(reg-event-fx
+ ::fetch-user-playlists
+ (fn-traced [{:keys [db]} [_ _]]
+  {:db         (assoc db :fetching-user-playlists true)
+   :http-xhrio {:method          :get
+                :uri             "/api/playlists"
+                :timeout         8000                       ;; optional see API docs
+                :response-format (json-response-format {:keywords? true}) ;; IMPORTANT!: You must provide this.
+                :on-success      [::success-user-playlists-result]
+                :on-failure      [::failed-user-playlists-result]}}))
+
+(reg-event-db
+ ::success-user-playlists-result
+ (fn-traced [db [_ result]]
+  (assoc db :playlists result :fetching-user-playlists false)))
+
+(reg-event-db
+ ::failed-user-playlists-result
+ (fn-traced [db [_ _]]
+  (assoc db :fetching-user-playlists false)))
