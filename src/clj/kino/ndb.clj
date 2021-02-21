@@ -300,11 +300,27 @@
   (jdbc/execute!
     db
     (->
-      (select :p.id :p.name :p.description :p.img_url :p.total_tracks)
+      (select :p.id :p.name :p.description :p.img_url :p.total_tracks :p.external_id :p.snapshot_id) ;; TODO last two fields should not be exposed
       (from [:playlists :p])
       (where [:= :p.owner_id user-id])
       sql/format)
     {:builder-fn rs/as-unqualified-lower-maps}))
+
+(defn insert-playlist-track [db playlist-track]
+  (jdbc/execute-one!
+    db
+    (->
+      (insert-into :playlist_tracks)
+      (values [playlist-track])
+      sql/format)
+    {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
+
+(defn insert-all-playlist-track-data [db data playlist-id]
+  (let [artists (mapv (partial insert-or-get-artist db) (:artists data))
+        album (insert-or-get-album db (:album data))
+        track (insert-or-get-track db (:track data) (:id album))
+        _ (insert-track-artists db (:id track) (map :id artists))]
+    (insert-playlist-track db {:playlist_id playlist-id :track_id (:id track)})))
 
 ;; migrations
 

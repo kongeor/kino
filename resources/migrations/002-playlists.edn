@@ -2,9 +2,12 @@
         "CREATE TABLE playlists (id SERIAL PRIMARY KEY, name VARCHAR(1000) NOT NULL, external_id VARCHAR(255) NOT NULL UNIQUE,
          owner_id INTEGER REFERENCES users(id), external_owner_id VARCHAR(255) REFERENCES users(external_id),
          snapshot_id VARCHAR(255) NOT NULL, public BOOLEAN NOT NULL, total_tracks INTEGER, type VARCHAR(255), description TEXT,
-         collaborative BOOLEAN NOT NULL, img_url VARCHAR(1000));
-        "]
- :down ["
-         DROP TABLE playlists;
-         "
+         collaborative BOOLEAN NOT NULL, img_url VARCHAR(1000));"
+        "ALTER TABLE tracks ADD COLUMN duration_ms INTEGER;"
+        "ALTER TABLE albums ADD COLUMN release_date DATE;"
+        "CREATE TABLE playlist_tracks(playlist_id INTEGER REFERENCES playlists(id) ON DELETE CASCADE, track_id INTEGER REFERENCES tracks(id));"]
+ :down ["DROP TABLE playlist_tracks;"
+        "DROP TABLE playlists;"
+        "ALTER TABLE tracks DROP COLUMN duration_ms;"
+        "ALTER TABLE albums DROP COLUMN release_date;"
         ]}

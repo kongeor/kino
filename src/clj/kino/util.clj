@@ -32,3 +32,27 @@
 
 (defn iso-date-str->instant [s]
   (java.time.Instant/parse s))
+
+
+(defn multi-page-fetch [spotify-func params access_token & {:keys [limit] :or {limit 50}}]
+  (let [params (assoc params :limit 50)
+        data (spotify-func params access_token)
+        total (:total data)]
+    (loop [offset 0
+           params params
+           items (:items data)]
+      (println ">>>>> " data)
+      (if (>= (+ limit offset) total)
+        items
+        (let [offset (+ offset limit)
+              params (assoc params :offset offset)
+              data (spotify-func params access_token)]
+          (println "fetching " spotify-func "with params" params)
+          (recur offset params (concat items (:items data))))))))
+
+(comment
+  (loop [i 0
+         x []]
+    (if (> i 5)
+      x
+      (recur (inc i) (concat x [i])))))
