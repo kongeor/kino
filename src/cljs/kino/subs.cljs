@@ -2,12 +2,12 @@
   (:require [re-frame.core :refer [reg-sub subscribe]]))
 
 (reg-sub
-  :initialized?
+  ::initialized?
   (fn [db _]
     (:initialized? db)))
 
 (reg-sub
- :active-page
+ ::active-page
  (fn [db _]
    (:active-page db)))
 
@@ -25,3 +25,8 @@
   ::playlists
   (fn [db _]
     (:playlists db)))
+
+(reg-sub
+  ::playlist-tracks
+  (fn [db [_ id]]
+    (get-in db [:playlist id :tracks])))

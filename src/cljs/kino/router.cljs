@@ -6,6 +6,7 @@
 (def routes
   ["/" {""         :home
         "playlists" :playlists
+        "playlists/" {[:id] :playlists}
 
         "login"    :login
         "logout"   :logout
@@ -24,9 +25,7 @@
 (defn- dispatch-route
   [matched-route]
   (dispatch [:kino.events/set-active-page {:page      (:handler matched-route)
-                                           :slug      (get-in matched-route [:route-params :slug])
-                                           :profile   (get-in matched-route [:route-params :user-id])
-                                           :favorited (get-in matched-route [:route-params :user-id])}]))
+                                           :route-params (get-in matched-route [:route-params])}]))
 
 (defn start!
   []

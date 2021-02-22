@@ -67,30 +67,48 @@
 
 (defn playlist-card [p]
   (when (:name p)
-    [:div.card
-     [:div.card-image
-      [:figure.image
-       [:img {:src (:img_url p)}]]]
-     [:div.card-content
-      [:p.title.is-4 (:name p)]
-      [:p.subtitle.is-6 (str "Total tracks: ") (:total_tracks p)]
-      [:p.subtitle.is-6 (:description p)]]]))
+    [:a {:href (str "/playlists/" (:id p)) :on-click #(rf/dispatch [:kino.events/set-active-page {:page :playlists :route-params {:id (:id p)}}])}
+     [:div.card
+      [:div.card-image
+       [:figure.image
+        [:img {:src (:img_url p)}]]]
+      [:div.card-content
+       [:p.title.is-4 (:name p)]
+       [:p.subtitle.is-6 (str "Total tracks: ") (:total_tracks p)]
+       [:p.subtitle.is-6 (:description p)]]]]))
+
+(defn playlist-tracks [playlist-id]
+  (let [playlist-tracks @(subscribe [:kino.subs/playlist-tracks playlist-id])]
+    [:table.table
+     [:thead
+      [:tr
+       [:th "Name"]
+       [:th "Album"]]]
+     [:tbody
+      (for [t playlist-tracks]
+        ^{:key (:track_id t)} [:tr
+                               [:td (:track_name t)]
+                               [:td (:album_name t)]])]]
+    ))
 
 (defn user-playlists-view []
   (let [user @(subscribe [:kino.subs/user])
         uid (:id user)]
     (when uid
-      [:div
-       (if-let [playlist-data @(subscribe [:kino.subs/playlists])]
-         (let [n-to-fill (- 6 (mod (count playlist-data) 6))
-               all-data (concat playlist-data (mapv (fn [i] {:id (- i)}) (range n-to-fill)))
-               part-data (partition-all 6 all-data)]
-           (map-indexed
-             (fn [idx item]
-               ^{:key idx} [:div.columns
-                            (for [p item]
-                              ^{:key (:id p)} [:div.column [playlist-card p]])])
-             part-data)))])))
+      (let [route-params (:route-params @(subscribe [:kino.subs/active-page]))]
+        (if-let [playlist-id (:id route-params)]
+          [playlist-tracks playlist-id]
+          [:div
+           (if-let [playlist-data @(subscribe [:kino.subs/playlists])]
+             (let [n-to-fill (- 6 (mod (count playlist-data) 6))
+                   all-data (concat playlist-data (mapv (fn [i] {:id (- i)}) (range n-to-fill)))
+                   part-data (partition-all 6 all-data)]
+               (map-indexed
+                 (fn [idx item]
+                   ^{:key idx} [:div.columns
+                                (for [p item]
+                                  ^{:key (:id p)} [:div.column [playlist-card p]])])
+                 part-data)))])))))
 
 (defn home []
   [user-plays-view])
@@ -126,9 +144,9 @@
     [home]))
 
 (defn kino-app []
-  (let [ready? (subscribe [:initialized?])]
+  (let [ready? (subscribe [:kino.subs/initialized?])]
     (if-not @ready?
       [:div "initializing ..."]
-      (let [active-page @(subscribe [:active-page])]
+      (let [active-page @(subscribe [:kino.subs/active-page])]
         (main-wrapper
           [pages active-page])))))

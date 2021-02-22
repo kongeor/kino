@@ -48,6 +48,13 @@
     (timbre/info "fetching playlists for" uid)
     (json (ndb/get-user-playlists db uid))))
 
+(defn playlist-tracks-handler [{:keys [db session route-params] :as req}]
+  (clojure.pprint/pprint req)
+  (let [uid (:spot.user/id session)
+        playlist-id (Integer. (-> route-params :id))]
+    (timbre/info "fetching playlist tracks for" uid)
+    (json (ndb/get-playlist-tracks db playlist-id uid))))
+
 (defroutes routes
   (GET "/" []
     (fn []
@@ -59,6 +66,7 @@
   (GET "/api/me" [] me-handler)
   (GET "/api/plays" [] plays-handler)
   (GET "/api/playlists" [] playlists-handler)
+  (GET "/api/playlists/:id/tracks" [] playlist-tracks-handler)
   (GET "/stats" []
        (fn [{session :session db :db}]
          (let [uid (:spot.user/id session)]

@@ -14,10 +14,21 @@
   (fn-traced [db _]
     (assoc db :initialized? true)))
 
-(reg-event-db
+(defn calc-fetching-event [active-page]
+  (let [page (:page active-page)
+        playlist-id (-> active-page :route-params :id)]
+    (cond
+      (and (= :playlists page) (not (nil? playlist-id))) [::fetch-playlist-tracks playlist-id]
+      (= :playlists page) [::fetch-user-playlists])))
+
+(reg-event-fx
   ::set-active-page
-  (fn-traced [db [_ active-panel]]
-    (assoc db :active-page active-panel)))
+  (fn-traced [{:keys [db]} [_ active-panel]]
+    (let [evt (calc-fetching-event active-panel)
+          data {:db (assoc db :active-page active-panel)}]
+      (if evt
+        (assoc data :dispatch evt)
+        data))))
 
 (reg-event-fx
   ::fetch-current-user
@@ -85,3 +96,25 @@
   ::failed-user-playlists-result
   (fn-traced [db [_ _]]
     (assoc db :fetching-user-playlists false)))
+
+(reg-event-fx
+  ::fetch-playlist-tracks
+  (fn-traced [{:keys [db]} [_ playlist-id]]
+    {:db         (assoc db :fetching-playlist-tracks true)
+     :http-xhrio {:method          :get
+                  :uri             (str "/api/playlists/" playlist-id "/tracks")
+                  :timeout         8000                       ;; optional see API docs
+                  :response-format (json-response-format {:keywords? true}) ;; IMPORTANT!: You must provide this.
+                  :on-success      [::success-playlist-tracks-result playlist-id]
+                  :on-failure      [::failed-playlist-trakcs-result]}}))
+
+(reg-event-db
+  ::success-playlist-tracks-result
+  (fn-traced [db [_ playlist-id result] ]
+    (assoc-in (assoc db :fetching-playlist-tracks false)
+      [:playlist playlist-id :tracks] result)))
+
+(reg-event-db
+  ::failed-playlist-trakcs-result
+  (fn-traced [db [_ _]]
+    (assoc db :fetching-playlist-tracks false)))

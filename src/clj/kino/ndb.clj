@@ -322,6 +322,34 @@
         _ (insert-track-artists db (:id track) (map :id artists))]
     (insert-playlist-track db {:playlist_id playlist-id :track_id (:id track)})))
 
+(defn get-playlist-tracks [db playlist-id user-id]
+  (let [sql (->
+              #_(select [:albums.id :a_id] #_[:t.id :track_id])
+              (select [:t.id :track_id] [:t.name :track_name] [:a.name :album_name] [:a.img_url :album_img_url] #_[:t.id :track_id])
+              (from [:playlists :pl])
+              (join
+                [:playlist_tracks :plt] [:= :pl.id :plt.playlist_id]
+                [:tracks :t] [:= :t.id :plt.track_id]
+                [:albums :a] [:= :a.id :t.album_id]
+                [:users :u] [:= :u.id :pl.owner_id])
+              (where [:= :u.id user-id] [:= :pl.id playlist-id])
+              sql/format)]
+    (jdbc/execute!
+      db
+      sql
+      {:builder-fn rs/as-unqualified-lower-maps})))
+
+(comment
+  (let [db (:database.sql/connection integrant.repl.state/system)]
+    (reduce
+      (fn [acc row]
+        (conj acc (-> (select-keys row [:name :id]))))
+      []
+      (jdbc/plan db ["select id,name from playlists"]))))
+
+(comment
+  (get-playlist-tracks (:database.sql/connection integrant.repl.state/system) 44 1))
+
 ;; migrations
 
 (defn migrate [db-spec]
