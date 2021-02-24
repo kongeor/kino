@@ -67,7 +67,7 @@
 
 (defn playlist-card [p]
   (when (:name p)
-    [:a {:href (str "/playlists/" (:id p)) :on-click #(rf/dispatch [:kino.events/set-active-page {:page :playlists :route-params {:id (:id p)}}])}
+    [:a {:href (str "/playlists/" (:id p))}
      [:div.card
       [:div.card-image
        [:figure.image
@@ -86,7 +86,7 @@
        [:th "Album"]]]
      [:tbody
       (for [t playlist-tracks]
-        ^{:key (:track_id t)} [:tr
+        ^{:key (:ordinal t)} [:tr
                                [:td (:track_name t)]
                                [:td (:album_name t)]])]]
     ))
@@ -123,7 +123,6 @@
   [:h2 "stats"])
 
 (defn playlists []
-  (rf/dispatch [:kino.events/fetch-user-playlists])
   [user-playlists-view])
 
 (defn nav []

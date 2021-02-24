@@ -26,9 +26,9 @@
           (:items data))))))
 
 (defn get-track-data [track]
-  (let [track' (select-keys track [:name :explicit :track_number :id])
+  (let [track' (select-keys track [:name :explicit :track_number :duration_ms :id])
         album (merge
-                 (select-keys (:album track) [:release_data :name :id :total_tracks])
+                 (select-keys (:album track) [:release_date :name :id :total_tracks])
                  {:img_url (-> track :album :images first :url)})
         artists (map #(select-keys % [:name :id]) (:artists track))]
     {:track track'
@@ -52,14 +52,14 @@
       (for [item items]
         (let [track-data (get-track-data (:track item))
               played-at (-> item :played_at util/iso-date-str->instant)]
-          #_(timbre/info "persisting track" track-data played-at ext-user-id)
+          (timbre/info "persisting track" track-data played-at ext-user-id)
           (ndb/insert-all-track-data db track-data played-at ext-user-id))))))
 
 (defn persist-all-playlist-data [db items playlist-id]
-  (doseq [item items]
+  (doseq [[item ordinal] (map vector items (iterate inc 1))]
     (let [track-data (get-track-data (:track item))]
-      (timbre/info "persisting playlist" playlist-id "track")
-      (ndb/insert-all-playlist-track-data db track-data playlist-id))))
+      (timbre/info "persisting playlist" playlist-id "track" track-data "with ordinal" ordinal)
+      (ndb/insert-all-playlist-track-data db track-data playlist-id ordinal))))
 
 #_(db/get-entity :36053687af37294a87a6121267aa6e17)
 
@@ -90,7 +90,7 @@
   (let [playlist (format-playlist-for-db spotify-playlist)
         user (ndb/get-user-by-ext-id db (:external_owner_id playlist))
         playlist' (assoc playlist :owner_id (:id user))]
-    (ndb/insert-playlist db playlist')))
+    (ndb/insert-or-get-playlist db playlist')))
 
 (defn fetch-and-persist-playlists [db {id :id ext-id :external_id refresh-token :refresh_token}]
   (let [access_token (oauth/get-access-token refresh-token)
@@ -100,26 +100,29 @@
     (def fetched-playlists data)
     (timbre/info "persisting" (-> data :items count) "playlists for user" id)
     #_(persist-all-data id data)
-    (doall
-      (for [playlist (:items data)]
-        (do
-          (println "!!!" playlist)
-          (let [playlist (persist-playlist db playlist)
-                playlist-ext-id (:external_id playlist)
-                playlist-id (:id playlist)
-                playlist-tracks (util/multi-page-fetch spotify/get-a-playlists-tracks {:user_id ext-id :playlist_id playlist-ext-id} access_token)] ;; TODO fetch moar
+    (doseq [playlist (:items data)]
+      (let [db-playlist (persist-playlist db playlist)]
+        (when (not= (:snapshot_id playlist) (:snapshot_id db-playlist))
+          (timbre/info "playlist" (:id db-playlist) "changed. Deleting tracks and updating snapshot id")
+          (ndb/delete-playlist-tracks db (:id db-playlist))
+          (ndb/update-playlist-snapshot-id db (:id db-playlist) (:snapshot_id playlist)))
+        (if (empty? (ndb/get-playlist-tracks db (:id db-playlist) id))
+          (let [playlist-ext-id (:external_id db-playlist)
+                playlist-id (:id db-playlist)
+                playlist-tracks (util/multi-page-fetch spotify/get-a-playlists-tracks {:user_id ext-id :playlist_id playlist-ext-id} access_token)]
             (println "playlist tracks " playlist-tracks)
-            (persist-all-playlist-data db playlist-tracks playlist-id))))
-      #_(for [playlist (:items data)]
+            (persist-all-playlist-data db playlist-tracks playlist-id))
+          (timbre/info "playlist" (:id db-playlist) "has tracks. Ignoring"))))
+    #_(for [playlist (:items data)]
         (let [
               playlist (persist-playlist db playlist)
               playlist-id (:id playlist)
               playlist-tracks (spotify/get-a-playlists-tracks {:user_id ext-id :playlist_id playlist-id} access_token)]
-          (persist-all-playlist-data db playlist-tracks playlist-id))))))
+          (persist-all-playlist-data db playlist-tracks playlist-id)))))
 
 (comment
   (let [db (:database.sql/connection integrant.repl.state/system)
-        user (first (ndb/get-users db))]
+        user (second (ndb/get-users db))]
     (fetch-and-persist-playlists db user)
     #_(persist-all-playlist-data db playlist-tracks 28)))
 

@@ -5,7 +5,7 @@
          collaborative BOOLEAN NOT NULL, img_url VARCHAR(1000));"
         "ALTER TABLE tracks ADD COLUMN duration_ms INTEGER;"
         "ALTER TABLE albums ADD COLUMN release_date DATE;"
-        "CREATE TABLE playlist_tracks(playlist_id INTEGER REFERENCES playlists(id) ON DELETE CASCADE, track_id INTEGER REFERENCES tracks(id));"]
+        "CREATE TABLE playlist_tracks(playlist_id INTEGER REFERENCES playlists(id) ON DELETE CASCADE, track_id INTEGER REFERENCES tracks(id), ordinal INTEGER NOT NULL);"]
  :down ["DROP TABLE playlist_tracks;"
         "DROP TABLE playlists;"
         "ALTER TABLE tracks DROP COLUMN duration_ms;"

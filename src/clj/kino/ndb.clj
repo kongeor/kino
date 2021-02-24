@@ -77,17 +77,19 @@
     {:builder-fn rs/as-unqualified-lower-maps}))
 
 (comment
-  (get-album-by-ext-id "3NoP1ifIejWkGSDsO9T2xH"))
+  (let [db (:database.sql/connection integrant.repl.state/system)]
+    (get-album-by-ext-id db "3NoP1ifIejWkGSDsO9T2xH")))
 
 (defn insert-album [db album]
-  (jdbc/execute-one!
-    db
-    (->
-      (insert-into :albums)
-      (columns :name :external_id :img_url :total_tracks)
-      (values [(mapv album [:name :id :img_url :total_tracks])])
-      sql/format)
-    {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
+  (let [album' (assoc album :release_date (sql/call :cast (:release_date album) :date))]
+    (jdbc/execute-one!
+      db
+      (->
+        (insert-into :albums)
+        (columns :name :external_id :img_url :total_tracks :release_date)
+        (values [(mapv album' [:name :id :img_url :total_tracks :release_date])])
+        sql/format)
+      {:builder-fn rs/as-unqualified-lower-maps :return-keys true})))
 
 (comment
   (insert-album {:name "The Nat King Cole Story",
@@ -101,10 +103,12 @@
     (insert-album db album)))
 
 (comment
-  (insert-or-get-album {:name "The Nat King Cole Story",
-                        :id "3NoP1ifIejWkGSDsO9T2xH",
-                        :total_tracks 36,
-                        :img_url "https://i.scdn.co/image/ab67616d0000b273deac5adf07affb5fec422701"}))
+  (let [db (:database.sql/connection integrant.repl.state/system)]
+    (insert-album db {:name         "The Nat King Cole Story",
+                      :id "yolo5"
+                      :total_tracks 36,
+                      :release_date "2020-01-01"
+                      :img_url      "https://i.scdn.co/image/ab67616d0000b273deac5adf07affb5fec422701"})))
 
 ;; tracks
 
@@ -122,8 +126,8 @@
     db
     (->
       (insert-into :tracks)
-      (columns :name :external_id :explicit :track_number :album_id)
-      (values [(conj (mapv track [:name :id :explicit :track_number]) album-id)])
+      (columns :name :external_id :explicit :track_number :duration_ms :album_id)
+      (values [(conj (mapv track [:name :id :explicit :track_number :duration_ms]) album-id)])
       sql/format)
     {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
 
@@ -287,6 +291,12 @@
 
 ;; playlists
 
+(defn get-playlist-by-ext-id [db ext-id]
+  (jdbc/execute-one!
+    db
+    (sql/format (sql/build :select :* :from :playlists :where [:= :external_id ext-id]))
+    {:builder-fn rs/as-unqualified-lower-maps}))
+
 (defn insert-playlist [db playlist]
   (jdbc/execute-one!
     db
@@ -295,6 +305,34 @@
       (values [playlist])
       sql/format)
     {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
+
+(defn update-playlist-snapshot-id [db playlist-id snapshot-id]
+  (jdbc/execute-one!
+    db
+    (->
+      (update :playlists)
+      (sset {:snapshot_id snapshot-id})
+      (where [:= :playlist_id playlist-id])
+      sql/format)
+    {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
+
+(defn insert-or-get-playlist [db playlist]
+  (if-let [p (get-playlist-by-ext-id db (:external_id playlist))]
+    p
+    (insert-playlist db playlist)))
+
+(defn delete-playlist-tracks [db playlist-id]
+  (jdbc/execute-one!
+    db
+    (->
+      (delete-from :playlist_tracks)
+      (where [:= :playlist_id playlist-id])
+      sql/format)
+    {:builder-fn rs/as-unqualified-lower-maps}))
+
+(comment
+  (let [db (:database.sql/connection integrant.repl.state/system)]
+   (delete-playlist-tracks db 18)))
 
 (defn get-user-playlists [db user-id]
   (jdbc/execute!
@@ -315,17 +353,16 @@
       sql/format)
     {:builder-fn rs/as-unqualified-lower-maps :return-keys true}))
 
-(defn insert-all-playlist-track-data [db data playlist-id]
+(defn insert-all-playlist-track-data [db data playlist-id ordinal]
   (let [artists (mapv (partial insert-or-get-artist db) (:artists data))
         album (insert-or-get-album db (:album data))
         track (insert-or-get-track db (:track data) (:id album))
         _ (insert-track-artists db (:id track) (map :id artists))]
-    (insert-playlist-track db {:playlist_id playlist-id :track_id (:id track)})))
+    (insert-playlist-track db {:playlist_id playlist-id :track_id (:id track) :ordinal ordinal})))
 
 (defn get-playlist-tracks [db playlist-id user-id]
   (let [sql (->
-              #_(select [:albums.id :a_id] #_[:t.id :track_id])
-              (select [:t.id :track_id] [:t.name :track_name] [:a.name :album_name] [:a.img_url :album_img_url] #_[:t.id :track_id])
+              (select [:plt.ordinal :ordinal] [:t.id :track_id] [:t.name :track_name] [:a.name :album_name] [:a.img_url :album_img_url])
               (from [:playlists :pl])
               (join
                 [:playlist_tracks :plt] [:= :pl.id :plt.playlist_id]
