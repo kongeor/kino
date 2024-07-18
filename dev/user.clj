@@ -1,12 +1,8 @@
 (ns user
   (:require [integrant.repl :as ig-repl]
-            [clojure.tools.namespace.repl :refer [set-refresh-dirs]]
-            [kino.system :as system]))
-
-#_(set-init! #'base-system)
-; type (start) in the repl to start your development-time system.
-
-(set-refresh-dirs "src")
+            [kino.system :as system]
+            [ragtime.jdbc :as rt-jdbc]
+            [ragtime.repl :as rt-repl]))
 
 (ig-repl/set-prep! (fn [] system/config))
 
@@ -20,3 +16,17 @@
   (halt)
   (reset)
   (reset-all))
+
+;; ragtime
+
+(comment
+  (let [db (:db (:config/settings integrant.repl.state/system))
+        rt-config {:datastore  (rt-jdbc/sql-database db)
+                   :migrations (rt-jdbc/load-resources "migrations")}]
+    (rt-repl/migrate rt-config)))
+
+(comment
+  (let [db (:db (:config/settings integrant.repl.state/system))
+        rt-config {:datastore  (rt-jdbc/sql-database db)
+                   :migrations (rt-jdbc/load-resources "migrations")}]
+    (rt-repl/rollback rt-config)))

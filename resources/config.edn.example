@@ -1,0 +1,14 @@
+{:http-port 3000
+ :nrepl-port nil
+ :host "localhost"
+ :app-host "http://localhost:3000"
+ :version "dev"
+ :spotify-client-id ""
+ :spotify-client-secret ""
+ :history-watcher-interval 30
+ :db {:dbtype               "postgres"
+      :host                 "localhost"
+      :dbname               "kino"
+      :user                 "kino"
+      :password             "kino"
+      :dataSourceProperties {:socketTimeout 30}}}

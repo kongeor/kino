@@ -1,15 +1,13 @@
 (ns kino.html
   (:require
     [hiccup [page :refer [html5 include-js include-css]]]
-    [environ.core :refer [env]]
-    [kino.util :as util]
     [kino.ndb :as ndb]
     [kino.stats :as stats]
-    [clojure.contrib.humanize :as hmn])
+    [clj-commons.humanize :as hmn])
   (:import (java.util Date)))
 
 
-(defn base [uid content]
+(defn base [settings uid content]
   (html5
     [:head
      [:meta {:charset "utf-8"}]
@@ -28,7 +26,7 @@
      [:div.container
       [:nav.navbar.mb-4 {:role "navigation" :aria-label "main navigation"}
        [:div.navbar-brand
-        [:a.navbar-item {:href (:app-host env)}
+        [:a.navbar-item {:href (:app-host settings)}
          [:h1.title "Kino"]]]
        [:div.navbar-menu
         [:div.navbar-start
@@ -46,13 +44,14 @@
        content]
       [:footer.footer
        [:div.content.has-text-centered
-        [:p (str "version " (util/project-version))]
+        [:p (str "version " (:version settings))]
         #_[:p (str "total users: " (count (db/get-users)))]]]]]))
 
-(defn index [db uid]
+(defn index [settings db uid]
   (let [play-data (ndb/get-recent-user-plays db uid)
         now (inst-ms (Date.))]
     (base
+      settings
       uid
       [:div
        (for [part-data (partition-all 6 play-data)]
@@ -69,11 +68,12 @@
                                      (map :kino.artist/name))]
                [:p.subtitle.is-6 (:album_name p)]
                (if-let [played-at (p :played_at)]
-                 [:p (-> played-at inst-ms hmn/datetime)])]]])])])))
+                 [:p (-> played-at hmn/datetime)])]]])])])))
 
-(defn stats [db uid]
+(defn stats [settings db uid]
   (let [album-data (stats/album-plays db uid)]
     (base
+      settings
       uid
       [:div
        (for [part-data (partition-all 6 album-data)]
@@ -91,4 +91,4 @@
                    [:p.title.is-4 (-> a :album_name)]
                    [:p (str "tracks " (->> (-> a :tracks)
                                         (clojure.string/join ", ")))] ;; TODO what to do with
-                   [:p (-> a :played-at inst-ms hmn/datetime)]]])]))])])))
+                   [:p (-> a :played-at hmn/datetime)]]])]))])])))

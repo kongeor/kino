@@ -1,6 +1,6 @@
 (ns kino.ndb
-  (:require [honeysql.core :as sql]
-            [honeysql.helpers :refer :all :as helpers]
+  (:require [honey.sql :as sql]
+            [honey.sql.helpers :refer :all :as helpers]
             [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs]
             [next.jdbc.date-time]
@@ -36,7 +36,7 @@
 (defn get-artist-by-ext-id [db ext-id]
   (jdbc/execute-one!
     db
-    (sql/format (sql/build :select :* :from :artists :where [:= :external_id ext-id]))
+    (sql/format {:select :* :from :artists :where [:= :external_id ext-id]})
     {:builder-fn rs/as-unqualified-lower-maps}))
 
 (comment
@@ -73,7 +73,7 @@
 (defn get-album-by-ext-id [db ext-id]
   (jdbc/execute-one!
     db
-    (sql/format (sql/build :select :* :from :albums :where [:= :external_id ext-id]))
+    (sql/format {:select :* :from :albums :where [:= :external_id ext-id]})
     {:builder-fn rs/as-unqualified-lower-maps}))
 
 (comment
@@ -111,7 +111,7 @@
 (defn get-track-by-ext-id [db ext-id]
   (jdbc/execute-one!
     db
-    (sql/format (sql/build :select :* :from :tracks :where [:= :external_id ext-id]))
+    (sql/format {:select :* :from :tracks :where [:= :external_id ext-id]})
     {:builder-fn rs/as-unqualified-lower-maps}))
 
 (comment
@@ -234,7 +234,7 @@
 (defn get-user-by-ext-id [db ext-id]
   (jdbc/execute-one!
     db
-    (sql/format (sql/build :select :* :from :users :where [:= :external_id ext-id]))
+    (sql/format {:select :* :from :users :where [:= :external_id ext-id]})
     {:builder-fn rs/as-unqualified-lower-maps}))
 
 (comment

@@ -1,6 +1,5 @@
 (ns kino.spot
   (:require [clj-spotify.core :as spotify]
-            [system.repl :refer [system]]
             [kino.ndb :as ndb]
             [kino.oauth :as oauth]
             [kino.util :as util]
@@ -57,8 +56,8 @@
 
 #_(db/get-entity :36053687af37294a87a6121267aa6e17)
 
-(defn fetch-and-persist [db {id :id ext-id :external_id refresh-token :refresh_token}]
-  (let [access_token (oauth/get-access-token refresh-token)
+(defn fetch-and-persist [settings db {id :id ext-id :external_id refresh-token :refresh_token}]
+  (let [access_token (oauth/get-access-token settings refresh-token)
         last-played-at (-> (ndb/get-last-played-track db id) :played_at)
         opts {:limit 50}
         opts (if last-played-at (assoc opts :after (inst-ms last-played-at)) opts)
