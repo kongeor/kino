@@ -30,6 +30,10 @@ create user kino with password 'kino';
 grant all privileges on database kino to kino;
 ```
 
+```
+alter database kino owner to kino;
+```
+
 FIXME
 
 ## License

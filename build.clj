@@ -32,4 +32,4 @@
   (b/uber {:class-dir class-dir
            :uber-file uber-file
            :basis basis
-           :main 'kion.system}))
+           :main 'kino.system}))
