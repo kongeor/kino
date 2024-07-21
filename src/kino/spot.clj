@@ -58,12 +58,13 @@
 
 (defn fetch-and-persist [settings db {id :id ext-id :external_id refresh-token :refresh_token}]
   (let [access_token (oauth/get-access-token settings refresh-token)
-        last-played-at (-> (ndb/get-last-played-track db id) :played_at)
+        last-played-track (ndb/get-last-played-track db id)
+        last-played-at ( :played_at last-played-track)
         opts {:limit 50}
         opts (if last-played-at (assoc opts :after (inst-ms last-played-at)) opts)
-        _ (timbre/info "fetching tracks for user" id "with opts" opts)
+        _ (timbre/info "fetching tracks for user" id "after track" last-played-track "with opts" opts)
         data (spotify/get-current-users-recently-played-tracks opts access_token)]
-    (spit "sample.edn" (with-out-str (pr data)))
+    #_(spit "sample.edn" (with-out-str (pr data)))
     (timbre/info "persisting" (-> data :items count) "tracks for user" id)
     #_(persist-all-data id data)
     (persist-all-data-sql db data ext-id)))
