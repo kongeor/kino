@@ -13,39 +13,43 @@
      [:meta {:charset "utf-8"}]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
      [:meta {:name "description" :content "Kino"}]
-     [:meta {:name "author" :content "Kostas Georgiadis"}]
      [:title "Kino"]
 
-     [:script {:src "//use.fontawesome.com/releases/v5.3.1/js/all.js"
+     #_[:script {:src "//use.fontawesome.com/releases/v5.3.1/js/all.js"
                :defer true
                }]
 
      (include-css
-       "//cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css")]
+       "//cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css")]
     [:body
-     [:div.container
-      [:nav.navbar.mb-4 {:role "navigation" :aria-label "main navigation"}
-       [:div.navbar-brand
-        [:a.navbar-item {:href (:app-host settings)}
-         [:h1.title "Kino"]]]
-       [:div.navbar-menu
-        [:div.navbar-start
-         [:div.navbar-item
-          [:a.button.is-light {:href "/stats"} "Stats"]]]]
-       [:div.navbar-end
-        [:div.navbar-item
-         [:div.buttons
-          (if-not uid
-            [:a.button.is-primary {:href "/login"}
-             [:strong "Login"]]
-            [:a.button.is-light {:href "/logout"} "Logout"])]]]]
-
-      [:div.mb-4
-       content]
-      [:footer.footer
-       [:div.content.has-text-centered
-        [:p (str "version " (:version settings))]
-        #_[:p (str "total users: " (count (db/get-users)))]]]]]))
+     [:section.section
+      [:div.container
+       [:nav.navbar {:role "navigation" :aria-label "main navigation"}
+        [:div.navbar-brand
+         [:a.navbar-item {:href (:app-host settings)}
+          [:h1.title "Kino"]]
+         [:a.navbar-burger {:role "button" :aria-label "menu" :aria-expanded "false" :data-target "navbarBasicExample"}
+          [:span {:aria-hidden "true"}]
+          [:span {:aria-hidden "true"}]
+          [:span {:aria-hidden "true"}]
+          [:span {:aria-hidden "true"}]]]
+        [:div#navbarBasicExample.navbar-menu
+         [:div.navbar-start
+          [:a.navbar-item {:href "/stats"} "Album Plays"]
+          [:a.navbar-item {:href "/most-played"} "Most Played"]]
+         [:div.navbar-end
+          [:div.navbar-item
+           [:div.buttons
+            (if-not uid
+              [:a.button.is-primary {:href "/login"}
+               [:strong "Login"]]
+              [:a.button.is-light {:href "/logout"} "Logout"])]]]]]
+       [:p.mb-4]
+       content
+       [:footer.footer
+        [:div.content.has-text-centered
+         [:p (str "version " (:version settings))]
+         #_[:p (str "total users: " (count (db/get-users)))]]]]]]))
 
 (defn index [settings db uid]
   (let [play-data (ndb/get-recent-user-plays db uid)
@@ -63,10 +67,12 @@
                [:figure.image
                 [:img {:src (:img_url p)}]]]
               [:div.card-content
-               [:p.title.is-4 (:track_name p)]
-               #_[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
-                                     (map :kino.artist/name))]
-               [:p.subtitle.is-6 (:album_name p)]
+               [:div.media
+                [:div.media-content
+                 [:p.title.is-4.mb-4 (:track_name p)]
+                 #_[:p.subtitle.is-6 (->> (-> p :kino.play/track :kino.track/artists)
+                                          (map :kino.artist/name))]
+                 [:p.subtitle.is-6 (:album_name p)]]]
                (if-let [played-at (p :played_at)]
                  [:p (-> played-at hmn/datetime)])]]])])])))
 
@@ -92,3 +98,30 @@
                    [:p (str "tracks " (->> (-> a :tracks)
                                         (clojure.string/join ", ")))] ;; TODO what to do with
                    [:p (-> a :played-at hmn/datetime)]]])]))])])))
+
+(defn user-most-played-artists [settings db uid]
+  (let [most-played-artists (ndb/get-user-most-played-artists db uid)]
+    (base
+      settings
+      uid
+      [:table.table
+       [:thead
+        [:tr
+         [:th "Artist"]
+         [:th "Plays"]
+         ]
+        ]
+       [:tfoot
+        [:tr
+         [:th "Artist"]
+         [:th "Plays"]
+         ]]
+       [:tbody
+        (for [{:keys [name plays]} most-played-artists]
+          [:tr
+           [:th name]
+           [:th plays]
+           ])
+
+        ]]
+      )))

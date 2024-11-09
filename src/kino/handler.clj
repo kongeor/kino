@@ -33,6 +33,10 @@
     (fn [{session :session db :db settings :settings}]
       (let [uid (:spot.user/id session)]
         (html/stats settings db uid))))
+  (GET "/most-played" []
+    (fn [{session :session db :db settings :settings}]
+      (let [uid (:spot.user/id session)]
+        (html/user-most-played-artists settings db uid))))
   (GET "/count" []
     (fn [{session :session db :db}]
       (let [count (:count session 0)

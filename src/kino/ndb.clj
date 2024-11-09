@@ -307,3 +307,28 @@
 #_(comment
   (rrepl/rollback {:datastore  (ragtime/sql-database (-> system :ndb :db-spec))
                   :migrations (ragtime/load-resources "migrations")}))
+
+;; user stats
+
+(defn get-user-most-played-artists [db user-id]
+  (jdbc/execute!
+    db
+    (sql/format {:select   [[:a.id]
+                            [:a.name]
+                            [[:count :*] :plays]]
+                 :from     [[:user-plays :up]]
+                 :join     [[:tracks :t] [:= :t.id :up.track-id]
+                            [:track-artists :ta] [:= :ta.track-id :t.id]
+                            [:artists :a] [:= :ta.artist-id :a.id]]
+                 :where    [[:= :up.user-id user-id]]
+                 :group-by [:a.id]
+                 :order-by [[:plays :desc]]
+                 :limit    20})
+    {:builder-fn rs/as-unqualified-lower-maps}))
+
+(comment
+  (get-user-most-played-artists
+    (:database.sql/connection integrant.repl.state/system)
+    1)
+
+  )

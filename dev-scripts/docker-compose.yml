@@ -1,5 +1,5 @@
 services:
-  database:
+  kino_db:
     image: 'postgres:15.7'
     container_name: kino_db
 
