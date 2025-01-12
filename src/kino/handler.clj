@@ -1,9 +1,12 @@
 (ns kino.handler
   (:require
+    [clojure.string :as str]
     [compojure.route :as route]
     [compojure.core :refer [defroutes GET POST ANY]]
     [ring.util.response :refer [response content-type charset]]
     [ring.middleware.defaults :refer [wrap-defaults site-defaults api-defaults]]
+    [org.corfield.ring.middleware.data-json :refer [wrap-json-response wrap-json-body]]
+    [kino.api :as api]
     [kino.ndb :as ndb]
     [kino.spot :as spot]
     [kino.html :as html]
@@ -59,6 +62,15 @@
         (->
           (response/redirect "/")
           (assoc :session session)))))
+  (POST "/api/v1/submit-listens" []
+    (fn [{:keys [db body] :as req}]
+      (let [api-token (-> req
+                      :headers
+                      (get "authorization")
+                      (str/split #" ")
+                      second)]
+        (api/submit-listens db api-token body)
+        (response/response {}))))
   (route/not-found "404"))
 
 (defn wrap-db [handler db]
@@ -85,5 +97,7 @@
                      #_(assoc-in [:session :cookie-attrs :max-age] 3600)
                      (assoc-in [:session :cookie-attrs :same-site] :lax)
                      (assoc-in [:security :anti-forgery] false))) ;; TODO check
-    #_wrap-dir-index
+      (wrap-json-body {:keywords? true :bigdecimals? true})
+      (wrap-json-response)
+      #_wrap-dir-index
     wrap-exception))

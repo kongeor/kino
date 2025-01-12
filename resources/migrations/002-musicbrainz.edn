@@ -1,0 +1,7 @@
+{:up   [
+        "ALTER TABLE users ADD COLUMN api_key VARCHAR(1024);
+        "]
+ :down ["
+        ALTER TABLE users DROP COLUMN api_key;
+         "
+        ]}

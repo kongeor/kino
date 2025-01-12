@@ -240,6 +240,15 @@
 (comment
   (get-track-by-ext-id "3nop1ifiejwkgsdso9t2xh"))
 
+(defn get-user-by-api-key [db api-key]
+  (jdbc/execute-one!
+    db
+    (sql/format {:select :* :from :users :where [:= :api_key api-key]})
+    {:builder-fn rs/as-unqualified-lower-maps}))
+
+(comment
+  (let [db (:database.sql/connection integrant.repl.state/system)]
+    (get-user-by-api-key db "12345")))
 
 ;; todo upsert
 (defn upsert-user [db user refresh-token]
